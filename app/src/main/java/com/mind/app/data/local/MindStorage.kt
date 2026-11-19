@@ -1,17 +1,24 @@
 package com.mind.app.data.local
 
 import android.content.Context
+import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.mind.app.domain.model.NoteFolder
 import com.mind.app.domain.model.NoteItem
 import com.mind.app.domain.model.QuoteDisplayMode
 import com.mind.app.domain.model.QuoteItem
 import com.mind.app.domain.model.TaskItem
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.io.File
+import java.util.UUID
 
 private val Context.dataStore by preferencesDataStore(name = "mind_storage")
 
@@ -23,7 +30,8 @@ class MindStorage(private val context: Context) {
         private val QUOTES_KEY = stringPreferencesKey("quotes_list")
         private val QUOTE_MODE_KEY = stringPreferencesKey("quote_mode")
         private val PINNED_QUOTE_ID_KEY = stringPreferencesKey("pinned_quote_id")
-        private val NOTES_KEY = stringPreferencesKey("notes_list")
+        private val FOLDERS_KEY = stringPreferencesKey("note_folders_list")
+        private val NOTES_KEY = stringPreferencesKey("notes_list_v2")
         private val TASKS_KEY = stringPreferencesKey("tasks_list")
         private val QURAN_VERSE_KEY = stringPreferencesKey("quran_verse")
     }
@@ -44,6 +52,11 @@ class MindStorage(private val context: Context) {
 
     val pinnedQuoteIdFlow: Flow<String?> = context.dataStore.data.map { prefs ->
         prefs[PINNED_QUOTE_ID_KEY]
+    }
+
+    val foldersFlow: Flow<List<NoteFolder>> = context.dataStore.data.map { prefs ->
+        prefs[FOLDERS_KEY]?.let { runCatching { json.decodeFromString<List<NoteFolder>>(it) }.getOrNull() }
+            ?: emptyList()
     }
 
     val notesFlow: Flow<List<NoteItem>> = context.dataStore.data.map { prefs ->
@@ -75,11 +88,48 @@ class MindStorage(private val context: Context) {
         }
     }
 
+    suspend fun saveFolders(folders: List<NoteFolder>) {
+        context.dataStore.edit { it[FOLDERS_KEY] = json.encodeToString(folders) }
+    }
+
     suspend fun saveNotes(notes: List<NoteItem>) {
         context.dataStore.edit { it[NOTES_KEY] = json.encodeToString(notes) }
     }
 
     suspend fun saveTasks(tasks: List<TaskItem>) {
         context.dataStore.edit { it[TASKS_KEY] = json.encodeToString(tasks) }
+    }
+
+    /**
+     * Copies any picked media (image, video, audio) into internal app storage
+     * so it persists reliably forever without URI permission expiration.
+     */
+    suspend fun importMediaUri(uri: Uri, prefix: String): Pair<String, String>? = withContext(Dispatchers.IO) {
+        runCatching {
+            val mediaDir = File(context.filesDir, "mind_media").apply { mkdirs() }
+            val originalName = resolveDisplayName(uri) ?: "$prefix_${System.currentTimeMillis()}"
+            val safeExt = originalName.substringAfterLast('.', "").takeIf { it.isNotBlank() }?.let { ".$it" } ?: ""
+            val destFile = File(mediaDir, "${prefix}_${UUID.randomUUID()}$safeExt")
+
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                destFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            val cleanTitle = originalName.substringBeforeLast('.')
+            Pair(cleanTitle, destFile.absolutePath)
+        }.getOrNull()
+    }
+
+    private fun resolveDisplayName(uri: Uri): String? {
+        if (uri.scheme == "content") {
+            context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                val idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (idx != -1 && cursor.moveToFirst()) {
+                    return cursor.getString(idx)
+                }
+            }
+        }
+        return uri.lastPathSegment
     }
 }

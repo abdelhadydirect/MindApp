@@ -1,10 +1,5 @@
 package com.mind.app.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,7 +20,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -70,6 +64,7 @@ import com.mind.app.ui.components.MinimalBottomActionBar
 import com.mind.app.ui.components.MindTopBar
 import com.mind.app.ui.components.PrayerDashboardCard
 import com.mind.app.ui.components.QuranVerseHeader
+import com.mind.app.ui.theme.CairoFontFamily
 import com.mind.app.ui.theme.MindBgDark
 import com.mind.app.ui.theme.MindGoldAccent
 import com.mind.app.ui.theme.MindInnerSurface
@@ -113,15 +108,9 @@ fun HomeScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 1. Quran Verse
             QuranVerseHeader(verse = quranVerse)
-
             Spacer(modifier = Modifier.height(6.dp))
-
-            // 2. Prayer & Date Card
             PrayerDashboardCard(state = prayerState)
-
-            // 3. Invisible-until-active Quote Space
             DynamicQuoteSpace(
                 quote = activeQuote,
                 onQuoteTap = { viewModel.shuffleRandomQuote() }
@@ -144,6 +133,7 @@ fun SubScreenTopBar(title: String, onBack: () -> Unit) {
         Text(
             text = title,
             color = MindTextPrimary,
+            fontFamily = CairoFontFamily,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold
         )
@@ -175,14 +165,14 @@ fun QuotesEditorScreen(viewModel: MindViewModel, onBack: () -> Unit) {
                 .padding(padding)
                 .padding(horizontal = 16.dp)
         ) {
-            // Editor Input Box
             OutlinedTextField(
                 value = inputText,
                 onValueChange = { inputText = it },
                 placeholder = {
                     Text(
                         "اكتب اقتباساً أو فكرة تهمك لتظهر في عقلك...",
-                        color = MindTextSecondary
+                        color = MindTextSecondary,
+                        fontFamily = CairoFontFamily
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -205,12 +195,11 @@ fun QuotesEditorScreen(viewModel: MindViewModel, onBack: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Mode Switcher: Pinned vs Random
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(
                         selected = mode == QuoteDisplayMode.PINNED,
                         onClick = { viewModel.setQuoteDisplayMode(QuoteDisplayMode.PINNED) },
-                        label = { Text("مثبت") },
+                        label = { Text("مثبت", fontFamily = CairoFontFamily) },
                         leadingIcon = {
                             Icon(Icons.Outlined.PushPin, contentDescription = null, modifier = Modifier.size(16.dp))
                         },
@@ -224,7 +213,7 @@ fun QuotesEditorScreen(viewModel: MindViewModel, onBack: () -> Unit) {
                     FilterChip(
                         selected = mode == QuoteDisplayMode.RANDOM,
                         onClick = { viewModel.setQuoteDisplayMode(QuoteDisplayMode.RANDOM) },
-                        label = { Text("عشوائي") },
+                        label = { Text("عشوائي", fontFamily = CairoFontFamily) },
                         leadingIcon = {
                             Icon(Icons.Outlined.Shuffle, contentDescription = null, modifier = Modifier.size(16.dp))
                         },
@@ -253,7 +242,7 @@ fun QuotesEditorScreen(viewModel: MindViewModel, onBack: () -> Unit) {
                 ) {
                     Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("حفظ", fontWeight = FontWeight.Bold)
+                    Text("حفظ", fontFamily = CairoFontFamily, fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -279,7 +268,6 @@ fun QuotesEditorScreen(viewModel: MindViewModel, onBack: () -> Unit) {
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        // Pin on Home button with Quote Icon
                         IconButton(
                             onClick = {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -296,6 +284,7 @@ fun QuotesEditorScreen(viewModel: MindViewModel, onBack: () -> Unit) {
                         Text(
                             text = item.text,
                             color = MindTextPrimary,
+                            fontFamily = CairoFontFamily,
                             fontSize = 16.sp,
                             modifier = Modifier
                                 .weight(1f)
@@ -308,115 +297,6 @@ fun QuotesEditorScreen(viewModel: MindViewModel, onBack: () -> Unit) {
                                 imageVector = Icons.Outlined.DeleteOutline,
                                 contentDescription = "Delete",
                                 tint = MindTextSecondary.copy(alpha = 0.7f)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun NotesScreen(viewModel: MindViewModel, onBack: () -> Unit) {
-    val notes by viewModel.notes.collectAsState()
-    var title by remember { mutableStateOf("") }
-    var content by remember { mutableStateOf("") }
-
-    Scaffold(
-        containerColor = MindBgDark,
-        topBar = { SubScreenTopBar(title = "التدوينات", onBack = onBack) }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp)
-        ) {
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                placeholder = { Text("عنوان التدوينة...", color = MindTextSecondary) },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MindMintIcon,
-                    unfocusedBorderColor = Color.White.copy(alpha = 0.15f),
-                    focusedTextColor = MindTextPrimary,
-                    unfocusedTextColor = MindTextPrimary
-                ),
-                singleLine = true
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = content,
-                onValueChange = { content = it },
-                placeholder = { Text("فرّغ أفكارك هنا...", color = MindTextSecondary) },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MindMintIcon,
-                    unfocusedBorderColor = Color.White.copy(alpha = 0.15f),
-                    focusedTextColor = MindTextPrimary,
-                    unfocusedTextColor = MindTextPrimary
-                ),
-                minLines = 3
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-            Button(
-                onClick = {
-                    if (title.isNotBlank() || content.isNotBlank()) {
-                        viewModel.addNote(title, content)
-                        title = ""
-                        content = ""
-                    }
-                },
-                modifier = Modifier.align(Alignment.End),
-                colors = ButtonDefaults.buttonColors(containerColor = MindMintIcon, contentColor = MindBgDark),
-                shape = RoundedCornerShape(14.dp)
-            ) {
-                Text("حفظ التدوينة", fontWeight = FontWeight.Bold)
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                contentPadding = PaddingValues(bottom = 24.dp)
-            ) {
-                items(notes, key = { it.id }) { note ->
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(18.dp))
-                            .background(MindInnerSurface)
-                            .padding(16.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = note.title,
-                                color = MindGoldAccent,
-                                fontSize = 17.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            IconButton(onClick = { viewModel.deleteNote(note.id) }) {
-                                Icon(
-                                    Icons.Outlined.DeleteOutline,
-                                    contentDescription = "Delete",
-                                    tint = MindTextSecondary
-                                )
-                            }
-                        }
-                        if (note.content.isNotBlank()) {
-                            Text(
-                                text = note.content,
-                                color = MindTextPrimary,
-                                fontSize = 15.sp,
-                                lineHeight = 22.sp
                             )
                         }
                     }
@@ -449,7 +329,7 @@ fun TasksScreen(viewModel: MindViewModel, onBack: () -> Unit) {
                 OutlinedTextField(
                     value = taskText,
                     onValueChange = { taskText = it },
-                    placeholder = { Text("أضف مهمة جديدة...", color = MindTextSecondary) },
+                    placeholder = { Text("أضف مهمة جديدة...", color = MindTextSecondary, fontFamily = CairoFontFamily) },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -511,6 +391,7 @@ fun TasksScreen(viewModel: MindViewModel, onBack: () -> Unit) {
                             Text(
                                 text = task.title,
                                 color = if (task.isDone) MindTextSecondary else MindTextPrimary,
+                                fontFamily = CairoFontFamily,
                                 fontSize = 16.sp,
                                 textDecoration = if (task.isDone) TextDecoration.LineThrough else TextDecoration.None
                             )
@@ -547,6 +428,7 @@ fun SettingsScreen(viewModel: MindViewModel, onBack: () -> Unit) {
             Text(
                 text = "الآية القرآنية في الواجهة الرئيسية",
                 color = MindGoldAccent,
+                fontFamily = CairoFontFamily,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -572,7 +454,7 @@ fun SettingsScreen(viewModel: MindViewModel, onBack: () -> Unit) {
                 colors = ButtonDefaults.buttonColors(containerColor = MindMintIcon, contentColor = MindBgDark),
                 shape = RoundedCornerShape(14.dp)
             ) {
-                Text("حفظ التعديل", fontWeight = FontWeight.Bold)
+                Text("حفظ التعديل", fontFamily = CairoFontFamily, fontWeight = FontWeight.Bold)
             }
         }
     }

@@ -17,11 +17,30 @@ enum class QuoteDisplayMode {
 }
 
 @Serializable
-data class NoteItem(
+data class NoteFolder(
+    val id: String = UUID.randomUUID().toString(),
+    val name: String,
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+@Serializable
+data class AudioTrackItem(
     val id: String = UUID.randomUUID().toString(),
     val title: String,
-    val content: String,
-    val createdAt: Long = System.currentTimeMillis()
+    val filePath: String
+)
+
+@Serializable
+data class NoteItem(
+    val id: String = UUID.randomUUID().toString(),
+    val folderId: String? = null,
+    val title: String = "",
+    val content: String = "",
+    val imagePaths: List<String> = emptyList(),
+    val videoPath: String? = null,
+    val audioPlaylist: List<AudioTrackItem> = emptyList(),
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis()
 )
 
 @Serializable

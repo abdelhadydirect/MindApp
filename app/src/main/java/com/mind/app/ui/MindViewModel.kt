@@ -1,10 +1,13 @@
 package com.mind.app.ui
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.mind.app.data.local.MindStorage
 import com.mind.app.data.prayer.PrayerEngine
+import com.mind.app.domain.model.AudioTrackItem
+import com.mind.app.domain.model.NoteFolder
 import com.mind.app.domain.model.NoteItem
 import com.mind.app.domain.model.PrayerDashboardState
 import com.mind.app.domain.model.QuoteDisplayMode
@@ -40,26 +43,22 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _randomSeed = MutableStateFlow(0)
 
-    // Active quote displayed on Home screen (null when no quotes exist)
     val activeHomeQuote: StateFlow<QuoteItem?> = combine(
         quotes,
         quoteMode,
         pinnedQuoteId,
         _randomSeed
     ) { list, mode, pinnedId, _ ->
-        if (list.isEmpty()) {
-            null
-        } else {
-            when (mode) {
-                QuoteDisplayMode.PINNED -> {
-                    list.find { it.id == pinnedId } ?: list.first()
-                }
-                QuoteDisplayMode.RANDOM -> {
-                    list.random()
-                }
-            }
+        if (list.isEmpty()) null
+        else when (mode) {
+            QuoteDisplayMode.PINNED -> list.find { it.id == pinnedId } ?: list.first()
+            QuoteDisplayMode.RANDOM -> list.random()
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    // Folders & Notes
+    val folders: StateFlow<List<NoteFolder>> = storage.foldersFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val notes: StateFlow<List<NoteItem>> = storage.notesFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -68,7 +67,6 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
-        // Update prayer countdown every 15 seconds (Battery friendly, HH:mm precision)
         viewModelScope.launch {
             while (true) {
                 _prayerState.value = PrayerEngine.calculateDashboardState()
@@ -123,21 +121,51 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
     fun setQuoteDisplayMode(mode: QuoteDisplayMode) {
         viewModelScope.launch {
             storage.setQuoteMode(mode)
-            if (mode == QuoteDisplayMode.RANDOM) {
-                _randomSeed.value += 1
-            }
+            if (mode == QuoteDisplayMode.RANDOM) _randomSeed.value += 1
         }
     }
 
-    // Notes Actions
-    fun addNote(title: String, content: String) {
-        if (title.isBlank() && content.isBlank()) return
+    // Folders Actions (No default folder - user creates manually)
+    fun createFolder(name: String) {
+        if (name.isBlank()) return
         viewModelScope.launch {
-            val newNote = NoteItem(
-                title = title.trim().ifBlank { "تدوينة سريعة" },
-                content = content.trim()
-            )
-            storage.saveNotes(listOf(newNote) + notes.value)
+            val newFolder = NoteFolder(name = name.trim())
+            storage.saveFolders(folders.value + newFolder)
+        }
+    }
+
+    fun renameFolder(folderId: String, newName: String) {
+        if (newName.isBlank()) return
+        viewModelScope.launch {
+            val updated = folders.value.map {
+                if (it.id == folderId) it.copy(name = newName.trim()) else it
+            }
+            storage.saveFolders(updated)
+        }
+    }
+
+    fun deleteFolder(folderId: String) {
+        viewModelScope.launch {
+            storage.saveFolders(folders.value.filterNot { it.id == folderId })
+            // Keep notes safe by detaching them from the deleted folder
+            val updatedNotes = notes.value.map {
+                if (it.folderId == folderId) it.copy(folderId = null) else it
+            }
+            storage.saveNotes(updatedNotes)
+        }
+    }
+
+    // Rich Notes Actions
+    fun upsertNote(note: NoteItem) {
+        viewModelScope.launch {
+            val existingIdx = notes.value.indexOfFirst { it.id == note.id }
+            val updatedNote = note.copy(updatedAt = System.currentTimeMillis())
+            val updatedList = if (existingIdx != -1) {
+                notes.value.toMutableList().apply { set(existingIdx, updatedNote) }
+            } else {
+                listOf(updatedNote) + notes.value
+            }
+            storage.saveNotes(updatedList)
         }
     }
 
@@ -145,6 +173,15 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             storage.saveNotes(notes.value.filterNot { it.id == id })
         }
+    }
+
+    suspend fun importImage(uri: Uri): String? = storage.importMediaUri(uri, "img")?.second
+
+    suspend fun importVideo(uri: Uri): String? = storage.importMediaUri(uri, "vid")?.second
+
+    suspend fun importAudio(uri: Uri): AudioTrackItem? {
+        val imported = storage.importMediaUri(uri, "aud") ?: return null
+        return AudioTrackItem(title = imported.first, filePath = imported.second)
     }
 
     // Tasks Actions
