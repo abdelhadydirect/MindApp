@@ -109,6 +109,7 @@ import java.util.Locale
 
 @Composable
 fun HomeScreen(
+    onNavigateToQuran: () -> Unit,
     viewModel: MindViewModel,
     onNavigateToNotes: () -> Unit,
     onNavigateToTasks: () -> Unit,
@@ -129,6 +130,7 @@ fun HomeScreen(
         bottomBar = {
             Box(modifier = Modifier.navigationBarsPadding()) {
                 MinimalBottomActionBar(
+                    onQuranClick = onNavigateToQuran,
                     onNotesClick = onNavigateToNotes,
                     onTasksClick = onNavigateToTasks,
                     onQuotesEditorClick = onNavigateToQuotes
