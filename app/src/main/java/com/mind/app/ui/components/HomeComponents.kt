@@ -45,6 +45,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -56,13 +57,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mind.app.domain.model.PrayerDashboardState
 import com.mind.app.domain.model.QuoteItem
 import com.mind.app.domain.model.SinglePrayer
+import com.mind.app.ui.theme.CairoFontFamily
 import com.mind.app.ui.theme.MindCardBottom
 import com.mind.app.ui.theme.MindCardTop
 import com.mind.app.ui.theme.MindGoldAccent
@@ -70,53 +75,57 @@ import com.mind.app.ui.theme.MindInnerSurface
 import com.mind.app.ui.theme.MindMintIcon
 import com.mind.app.ui.theme.MindTextPrimary
 import com.mind.app.ui.theme.MindTextSecondary
+import com.mind.app.ui.theme.QuranFontFamily
 
 @Composable
 fun MindTopBar(onSettingsClick: () -> Unit) {
     val haptic = LocalHapticFeedback.current
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(
-            onClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                onSettingsClick()
-            }
+    // Explicit LTR placement: Settings icon on Left, Mind logo + icon on Right
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.Outlined.Settings,
-                contentDescription = "Settings",
-                tint = MindTextPrimary,
-                modifier = Modifier.size(26.dp)
-            )
-        }
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = "Mind",
-                color = MindTextPrimary,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 0.5.sp
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Box(
-                modifier = Modifier
-                    .size(34.dp)
-                    .clip(CircleShape)
-                    .background(MindInnerSurface),
-                contentAlignment = Alignment.Center
+            IconButton(
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onSettingsClick()
+                }
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.Psychology,
-                    contentDescription = "Mind Logo",
-                    tint = MindMintIcon,
-                    modifier = Modifier.size(22.dp)
+                    imageVector = Icons.Outlined.Settings,
+                    contentDescription = "Settings",
+                    tint = MindTextPrimary,
+                    modifier = Modifier.size(26.dp)
                 )
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "Mind",
+                    color = MindTextPrimary,
+                    fontFamily = CairoFontFamily,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(CircleShape)
+                        .background(MindInnerSurface),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Psychology,
+                        contentDescription = "Mind Logo",
+                        tint = MindMintIcon,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
             }
         }
     }
@@ -127,16 +136,16 @@ fun QuranVerseHeader(verse: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 14.dp),
+            .padding(horizontal = 24.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "﴿$verse﴾",
+            text = "﴿ $verse ﴾",
             color = MindTextPrimary,
+            fontFamily = QuranFontFamily,
             fontSize = 26.sp,
-            fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center,
-            lineHeight = 40.sp
+            lineHeight = 44.sp
         )
     }
 }
@@ -164,148 +173,163 @@ fun PrayerDashboardCard(state: PrayerDashboardState) {
             )
             .padding(20.dp)
     ) {
-        // Header: Day + Hijri + Gregorian on Right, Mosque Icon on Left
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.12f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Mosque,
-                    contentDescription = null,
-                    tint = MindTextPrimary,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = state.dayNameAr,
-                    color = MindTextPrimary,
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = state.hijriDateAr,
-                    color = MindGoldAccent,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = "•  ${state.gregorianDateAr}",
-                    color = MindTextSecondary,
-                    fontSize = 14.sp
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(18.dp))
-
-        // Inner Next Prayer Countdown Card (Hours & Minutes Only)
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp))
-                .background(MindInnerSurface.copy(alpha = 0.72f))
-                .padding(16.dp)
-        ) {
+        // Header: Mosque Icon on Left, Arabic Date on Right (matching original image)
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(horizontalAlignment = Alignment.Start) {
-                    Text(
-                        text = "متبقي على الأذان",
-                        color = MindTextSecondary,
-                        fontSize = 13.sp
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = state.remainingHoursMinutes,
-                        color = MindTextPrimary,
-                        fontSize = 30.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.14f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Mosque,
+                        contentDescription = null,
+                        tint = MindTextPrimary,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
 
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = "الصلاة القادمة: ${state.nextPrayerName}",
-                        color = MindGoldAccent,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = state.nextPrayerTimeFormatted,
+                        text = state.dayNameAr,
                         color = MindTextPrimary,
+                        fontFamily = CairoFontFamily,
                         fontSize = 26.sp,
                         fontWeight = FontWeight.Bold
                     )
+                    Text(
+                        text = state.hijriDateAr,
+                        color = MindGoldAccent,
+                        fontFamily = CairoFontFamily,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "${state.gregorianDateAr}  •",
+                        color = MindTextSecondary,
+                        fontFamily = CairoFontFamily,
+                        fontSize = 14.sp
+                    )
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(18.dp))
 
-            // Custom RTL Progress Bar
-            Box(
+        // Inner Next Prayer Countdown Card (Left: Remaining HH:mm, Right: Next Prayer)
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(7.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.14f)),
-                contentAlignment = Alignment.CenterEnd
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(MindInnerSurface.copy(alpha = 0.72f))
+                    .padding(16.dp)
             ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "متبقي على الأذان",
+                            color = MindTextSecondary,
+                            fontFamily = CairoFontFamily,
+                            fontSize = 13.sp
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = state.remainingHoursMinutes,
+                            color = MindTextPrimary,
+                            fontFamily = CairoFontFamily,
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp
+                        )
+                    }
+
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = "الصلاة القادمة: ${state.nextPrayerName}",
+                            color = MindGoldAccent,
+                            fontFamily = CairoFontFamily,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                            Text(
+                                text = state.nextPrayerTimeFormatted,
+                                color = MindTextPrimary,
+                                fontFamily = CairoFontFamily,
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Progress Bar filling from Right to Left
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(animatedProgress)
-                        .fillMaxHeight()
+                        .fillMaxWidth()
+                        .height(7.dp)
                         .clip(CircleShape)
-                        .background(MindGoldAccent)
-                )
-            }
+                        .background(Color.White.copy(alpha = 0.14f)),
+                    contentAlignment = Alignment.CenterEnd
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(animatedProgress)
+                            .fillMaxHeight()
+                            .clip(CircleShape)
+                            .background(MindGoldAccent)
+                    )
+                }
 
-            Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = state.remainingText,
-                    color = MindTextSecondary,
-                    fontSize = 12.sp
-                )
-                Text(
-                    text = state.elapsedText,
-                    color = MindTextSecondary,
-                    fontSize = 12.sp
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = state.remainingText,
+                        color = MindTextSecondary,
+                        fontFamily = CairoFontFamily,
+                        fontSize = 12.sp
+                    )
+                    Text(
+                        text = state.elapsedText,
+                        color = MindTextSecondary,
+                        fontFamily = CairoFontFamily,
+                        fontSize = 12.sp
+                    )
+                }
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Horizontal Prayers Strip (RTL order: Fajr -> Sunrise -> Dhuhr -> Asr -> Maghrib -> Isha)
-        LazyRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            reverseLayout = true,
-            contentPadding = PaddingValues(horizontal = 2.dp)
-        ) {
-            items(state.prayersList, key = { it.nameAr }) { prayer ->
-                SinglePrayerChip(prayer = prayer)
+        // Horizontal Prayers Strip (RTL: Fajr on far right -> Sunrise -> Dhuhr -> Asr -> Maghrib -> Isha)
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                contentPadding = PaddingValues(horizontal = 2.dp)
+            ) {
+                items(state.prayersList, key = { it.nameAr }) { prayer ->
+                    SinglePrayerChip(prayer = prayer)
+                }
             }
         }
     }
@@ -322,7 +346,7 @@ private fun SinglePrayerChip(prayer: SinglePrayer) {
 
     Column(
         modifier = Modifier
-            .width(86.dp)
+            .width(96.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(bgColor)
             .border(
@@ -330,28 +354,35 @@ private fun SinglePrayerChip(prayer: SinglePrayer) {
                 color = borderColor,
                 shape = RoundedCornerShape(16.dp)
             )
-            .padding(vertical = 12.dp, horizontal = 8.dp),
+            .padding(vertical = 12.dp, horizontal = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = prayer.nameAr,
             color = if (prayer.isNext) MindGoldAccent else MindTextSecondary,
+            fontFamily = CairoFontFamily,
             fontSize = 14.sp,
-            fontWeight = if (prayer.isNext) FontWeight.Bold else FontWeight.Normal
+            fontWeight = if (prayer.isNext) FontWeight.Bold else FontWeight.Normal,
+            maxLines = 1,
+            softWrap = false
         )
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = prayer.timeFormatted,
             color = MindTextPrimary,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Bold
+            fontFamily = CairoFontFamily,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Clip
         )
     }
 }
 
 /**
  * Invisible-until-active Quote Space:
- * Takes zero space when empty; smoothly expands with pure Hijri-styled typography once a quote is saved.
+ * Completely hidden when empty; smoothly expands in Cairo (Hijri date) font once a quote is saved.
  */
 @Composable
 fun DynamicQuoteSpace(
@@ -381,7 +412,7 @@ fun DynamicQuoteSpace(
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onQuoteTap()
                     }
-                    .padding(horizontal = 28.dp, vertical = 20.dp),
+                    .padding(horizontal = 28.dp, vertical = 18.dp),
                 contentAlignment = Alignment.Center
             ) {
                 AnimatedContent(
@@ -396,6 +427,7 @@ fun DynamicQuoteSpace(
                     Text(
                         text = targetQuote.text,
                         color = MindGoldAccent,
+                        fontFamily = CairoFontFamily,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Center,
@@ -409,9 +441,7 @@ fun DynamicQuoteSpace(
 
 /**
  * Minimalist 3-Icon Bottom Navigation Bar (No Labels):
- * 1. Pen (Notes / Journaling)
- * 2. Tasks (Daily To-Do)
- * 3. Mind/Brain (Quotes Editor & Pin/Random Control)
+ * Order from Right to Left (Arabic): 1. Pen (Notes), 2. Tasks, 3. Mind/Brain (Quotes)
  */
 @Composable
 fun MinimalBottomActionBar(
@@ -419,33 +449,35 @@ fun MinimalBottomActionBar(
     onTasksClick: () -> Unit,
     onQuotesEditorClick: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 36.dp, vertical = 14.dp)
-            .clip(CircleShape)
-            .background(MindInnerSurface.copy(alpha = 0.85f))
-            .border(1.dp, Color.White.copy(alpha = 0.08f), CircleShape)
-            .padding(vertical = 10.dp, horizontal = 20.dp),
-        horizontalArrangement = Arrangement.SpaceAround,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        SpringIconAction(
-            icon = Icons.Outlined.Edit,
-            contentDescription = "Notes",
-            onClick = onNotesClick
-        )
-        SpringIconAction(
-            icon = Icons.Outlined.CheckCircle,
-            contentDescription = "Tasks",
-            onClick = onTasksClick
-        )
-        SpringIconAction(
-            icon = Icons.Outlined.Psychology,
-            contentDescription = "Mind Quotes",
-            tint = MindMintIcon,
-            onClick = onQuotesEditorClick
-        )
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 36.dp, vertical = 14.dp)
+                .clip(CircleShape)
+                .background(MindInnerSurface.copy(alpha = 0.85f))
+                .border(1.dp, Color.White.copy(alpha = 0.08f), CircleShape)
+                .padding(vertical = 10.dp, horizontal = 20.dp),
+            horizontalArrangement = Arrangement.SpaceAround,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            SpringIconAction(
+                icon = Icons.Outlined.Edit,
+                contentDescription = "Notes",
+                onClick = onNotesClick
+            )
+            SpringIconAction(
+                icon = Icons.Outlined.CheckCircle,
+                contentDescription = "Tasks",
+                onClick = onTasksClick
+            )
+            SpringIconAction(
+                icon = Icons.Outlined.Psychology,
+                contentDescription = "Mind Quotes",
+                tint = MindMintIcon,
+                onClick = onQuotesEditorClick
+            )
+        }
     }
 }
 
