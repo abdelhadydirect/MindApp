@@ -5,9 +5,11 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.mind.app.R
@@ -21,12 +23,34 @@ val MindTextPrimary = Color(0xFFF3F7F5)     // أبيض دافئ مريح للع
 val MindTextSecondary = Color(0xFFA7C4B9)   // أخضر رمادي هادئ
 val MindMintIcon = Color(0xFF28A77A)        // لون أيقونة العقل
 
-// Unified App Font: Cairo across the entire UI
+// Authentic Cairo Variable Font with explicit weights (matches the Hijri date font)
+@OptIn(ExperimentalTextApi::class)
 val CairoFontFamily = FontFamily(
-    Font(R.font.cairo, FontWeight.Normal),
-    Font(R.font.cairo, FontWeight.Medium),
-    Font(R.font.cairo, FontWeight.SemiBold),
-    Font(R.font.cairo, FontWeight.Bold)
+    Font(
+        resId = R.font.cairo,
+        weight = FontWeight.Normal,
+        variationSettings = FontVariation.Settings(FontVariation.weight(400))
+    ),
+    Font(
+        resId = R.font.cairo,
+        weight = FontWeight.Medium,
+        variationSettings = FontVariation.Settings(FontVariation.weight(500))
+    ),
+    Font(
+        resId = R.font.cairo,
+        weight = FontWeight.SemiBold,
+        variationSettings = FontVariation.Settings(FontVariation.weight(600))
+    ),
+    Font(
+        resId = R.font.cairo,
+        weight = FontWeight.Bold,
+        variationSettings = FontVariation.Settings(FontVariation.weight(700))
+    )
+)
+
+// Authentic Quranic Script Font (Amiri Quran)
+val QuranFontFamily = FontFamily(
+    Font(resId = R.font.amiri_quran, weight = FontWeight.Normal)
 )
 
 val MindTypography = Typography(

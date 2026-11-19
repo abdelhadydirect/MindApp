@@ -75,12 +75,11 @@ import com.mind.app.ui.theme.MindInnerSurface
 import com.mind.app.ui.theme.MindMintIcon
 import com.mind.app.ui.theme.MindTextPrimary
 import com.mind.app.ui.theme.MindTextSecondary
-import com.mind.app.ui.theme.CairoFontFamily
+import com.mind.app.ui.theme.QuranFontFamily
 
 @Composable
 fun MindTopBar(onSettingsClick: () -> Unit) {
     val haptic = LocalHapticFeedback.current
-    // Explicit LTR placement: Settings icon on Left, Mind logo + icon on Right
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Row(
             modifier = Modifier
@@ -142,10 +141,10 @@ fun QuranVerseHeader(verse: String) {
         Text(
             text = "﴿ $verse ﴾",
             color = MindTextPrimary,
-            fontFamily = CairoFontFamily,
-            fontSize = 26.sp,
+            fontFamily = QuranFontFamily,
+            fontSize = 27.sp,
             textAlign = TextAlign.Center,
-            lineHeight = 44.sp
+            lineHeight = 46.sp
         )
     }
 }
@@ -173,7 +172,7 @@ fun PrayerDashboardCard(state: PrayerDashboardState) {
             )
             .padding(20.dp)
     ) {
-        // Header: Mosque Icon on Left, Arabic Date on Right (matching original image)
+        // Header: Mosque Icon on Left, Arabic Date on Right
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -223,54 +222,66 @@ fun PrayerDashboardCard(state: PrayerDashboardState) {
 
         Spacer(modifier = Modifier.height(18.dp))
 
-        // Inner Next Prayer Countdown Card (Left: Remaining HH:mm, Right: Next Prayer)
+        // Inner Next Prayer Countdown Card (Clean 2-Column Alignment, Single Line Labels)
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(20.dp))
                     .background(MindInnerSurface.copy(alpha = 0.72f))
-                    .padding(16.dp)
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.Top
                 ) {
+                    // Left Column: Remaining Time
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "متبقي على الأذان",
                             color = MindTextSecondary,
                             fontFamily = CairoFontFamily,
-                            fontSize = 13.sp
+                            fontSize = 13.sp,
+                            maxLines = 1,
+                            softWrap = false
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = state.remainingHoursMinutes,
                             color = MindTextPrimary,
                             fontFamily = CairoFontFamily,
                             fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
+                            letterSpacing = 1.sp,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
 
+                    // Right Column: Next Prayer Name & Time
                     Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = "الصلاة القادمة: ${state.nextPrayerName}",
-                            color = MindGoldAccent,
-                            fontFamily = CairoFontFamily,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                            Text(
+                                text = "الصلاة القادمة: ${state.nextPrayerName}",
+                                color = MindGoldAccent,
+                                fontFamily = CairoFontFamily,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
                         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                             Text(
                                 text = state.nextPrayerTimeFormatted,
                                 color = MindTextPrimary,
                                 fontFamily = CairoFontFamily,
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Bold
+                                fontSize = 26.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                     }
@@ -320,7 +331,7 @@ fun PrayerDashboardCard(state: PrayerDashboardState) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Horizontal Prayers Strip (RTL: Fajr on far right -> Sunrise -> Dhuhr -> Asr -> Maghrib -> Isha)
+        // Horizontal Prayers Strip
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -380,10 +391,6 @@ private fun SinglePrayerChip(prayer: SinglePrayer) {
     }
 }
 
-/**
- * Invisible-until-active Quote Space:
- * Completely hidden when empty; smoothly expands in Cairo (Hijri date) font once a quote is saved.
- */
 @Composable
 fun DynamicQuoteSpace(
     quote: QuoteItem?,
@@ -439,10 +446,6 @@ fun DynamicQuoteSpace(
     }
 }
 
-/**
- * Minimalist 3-Icon Bottom Navigation Bar (No Labels):
- * Order from Right to Left (Arabic): 1. Pen (Notes), 2. Tasks, 3. Mind/Brain (Quotes)
- */
 @Composable
 fun MinimalBottomActionBar(
     onNotesClick: () -> Unit,
