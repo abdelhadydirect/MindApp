@@ -21,17 +21,12 @@ val MindTextPrimary = Color(0xFFF3F7F5)     // أبيض دافئ مريح للع
 val MindTextSecondary = Color(0xFFA7C4B9)   // أخضر رمادي هادئ
 val MindMintIcon = Color(0xFF28A77A)        // لون أيقونة العقل
 
-// Unified App Font (Cairo - matches the Hijri date font in the original design)
+// Unified App Font: Cairo across the entire UI
 val CairoFontFamily = FontFamily(
     Font(R.font.cairo, FontWeight.Normal),
     Font(R.font.cairo, FontWeight.Medium),
     Font(R.font.cairo, FontWeight.SemiBold),
     Font(R.font.cairo, FontWeight.Bold)
-)
-
-// Quranic Script Font (Amiri Quran)
-val QuranFontFamily = FontFamily(
-    Font(R.font.amiri_quran, FontWeight.Normal)
 )
 
 val MindTypography = Typography(
