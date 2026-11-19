@@ -33,6 +33,7 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
     private val _prayerState = MutableStateFlow(PrayerEngine.calculateDashboardState())
     val prayerState: StateFlow<PrayerDashboardState> = _prayerState.asStateFlow()
 
+    val appLightTheme: StateFlow<Boolean> = storage.appLightThemeFlow.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
     val quranVerse: StateFlow<String> = storage.quranVerseFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "وَلَا تَيۡـَٔسُواْ مِن رَّوۡحِ ٱللَّهِ")
 
@@ -110,6 +111,7 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // Quran Reader Actions
+    fun toggleAppLightTheme(isLight: Boolean) { viewModelScope.launch { storage.saveAppLightTheme(isLight) } }
     fun saveBookmark(surahId: Int, surahName: String, verseId: Int) {
         viewModelScope.launch {
             storage.saveQuranBookmark(QuranBookmark(surahId, surahName, verseId))

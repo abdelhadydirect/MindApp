@@ -641,6 +641,7 @@ fun TasksScreen(viewModel: MindViewModel, onBack: () -> Unit) {
 
 @Composable
 fun SettingsScreen(viewModel: MindViewModel, onBack: () -> Unit) {
+    val isLightTheme by viewModel.appLightTheme.collectAsState()
     val currentVerse by viewModel.quranVerse.collectAsState()
     val adhanEnabled by viewModel.adhanEnabled.collectAsState()
     val adhanToneUri by viewModel.adhanToneUri.collectAsState()
@@ -695,6 +696,16 @@ fun SettingsScreen(viewModel: MindViewModel, onBack: () -> Unit) {
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
+            // 0. Warm Sepia Light Theme Toggle
+            Row(
+                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(MindInnerSurface).padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("المظهر الفاتح الدافئ (الورق النهاري)", color = MindTextPrimary, fontFamily = CairoFontFamily, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Switch(checked = isLightTheme, onCheckedChange = { viewModel.toggleAppLightTheme(it) }, colors = SwitchDefaults.colors(checkedThumbColor = MindBgDark, checkedTrackColor = MindGoldAccent))
+            }
+
             // 1. Adhan Audio & Auto-Alarm Section
             Column(
                 modifier = Modifier

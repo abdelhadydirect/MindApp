@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,7 +42,6 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
@@ -51,16 +50,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import com.mind.app.ui.MindViewModel
-import com.mind.app.ui.screens.HomeScreen
-import com.mind.app.ui.screens.NotesScreen
-import com.mind.app.ui.screens.QuotesEditorScreen
-import com.mind.app.ui.screens.QuranScreen
-import com.mind.app.ui.screens.SettingsScreen
-import com.mind.app.ui.screens.TasksScreen
+import com.mind.app.ui.navigation.MindNavGraph
 import com.mind.app.ui.theme.CairoFontFamily
 import com.mind.app.ui.theme.MindBgDark
 import com.mind.app.ui.theme.MindCardTop
@@ -73,13 +64,20 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
-            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
-        )
-
         setContent {
-            MindTheme {
+            val mindViewModel: MindViewModel = viewModel()
+            val isLightTheme by mindViewModel.appLightTheme.collectAsState()
+
+            LaunchedEffect(isLightTheme) {
+                val barStyle = if (isLightTheme) {
+                    SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+                } else {
+                    SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                }
+                enableEdgeToEdge(statusBarStyle = barStyle, navigationBarStyle = barStyle)
+            }
+
+            MindTheme(lightTheme = isLightTheme) {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                     var showSplash by remember { mutableStateOf(true) }
 
@@ -99,54 +97,7 @@ class MainActivity : ComponentActivity() {
                         if (isSplashing) {
                             MindWelcomeSplashScreen()
                         } else {
-                            val navController = rememberNavController()
-                            val mindViewModel: MindViewModel = viewModel()
-
-                            NavHost(
-                                navController = navController,
-                                startDestination = "home"
-                            ) {
-                                composable("home") {
-                                    HomeScreen(
-                                        viewModel = mindViewModel,
-                                        onNavigateToQuran = { navController.navigate("quran") },
-                                        onNavigateToNotes = { navController.navigate("notes") },
-                                        onNavigateToTasks = { navController.navigate("tasks") },
-                                        onNavigateToQuotes = { navController.navigate("quotes") },
-                                        onNavigateToSettings = { navController.navigate("settings") }
-                                    )
-                                }
-                                composable("quran") {
-                                    QuranScreen(
-                                        viewModel = mindViewModel,
-                                        onBack = { navController.popBackStack() }
-                                    )
-                                }
-                                composable("notes") {
-                                    NotesScreen(
-                                        viewModel = mindViewModel,
-                                        onBack = { navController.popBackStack() }
-                                    )
-                                }
-                                composable("tasks") {
-                                    TasksScreen(
-                                        viewModel = mindViewModel,
-                                        onBack = { navController.popBackStack() }
-                                    )
-                                }
-                                composable("quotes") {
-                                    QuotesEditorScreen(
-                                        viewModel = mindViewModel,
-                                        onBack = { navController.popBackStack() }
-                                    )
-                                }
-                                composable("settings") {
-                                    SettingsScreen(
-                                        viewModel = mindViewModel,
-                                        onBack = { navController.popBackStack() }
-                                    )
-                                }
-                            }
+                            MindNavGraph(viewModel = mindViewModel)
                         }
                     }
                 }
@@ -155,9 +106,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/**
- * Elevated Welcome Splash Screen derived from Mind's emerald & gold palette
- */
 @Composable
 private fun MindWelcomeSplashScreen() {
     var startAnim by remember { mutableStateOf(false) }
@@ -188,14 +136,13 @@ private fun MindWelcomeSplashScreen() {
                 brush = Brush.verticalGradient(
                     colors = listOf(
                         MindBgDark,
-                        MindCardTop.copy(alpha = 0.32f),
+                        MindCardTop.copy(alpha = 0.25f),
                         MindBgDark
                     )
                 )
             ),
         contentAlignment = Alignment.Center
     ) {
-        // Soft Golden Ambient Halo behind App Icon
         Box(
             modifier = Modifier
                 .size(220.dp)

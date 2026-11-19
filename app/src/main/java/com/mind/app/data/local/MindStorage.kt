@@ -32,6 +32,7 @@ class MindStorage(private val context: Context) {
     private val json = Json { ignoreUnknownKeys = true }
 
     companion object {
+        private val APP_LIGHT_THEME_KEY = booleanPreferencesKey("app_light_theme")
         private val QUOTES_KEY = stringPreferencesKey("quotes_list")
         private val QUOTE_MODE_KEY = stringPreferencesKey("quote_mode")
         private val PINNED_QUOTE_ID_KEY = stringPreferencesKey("pinned_quote_id")
@@ -47,6 +48,10 @@ class MindStorage(private val context: Context) {
         private val ADHAN_ENABLED_KEY = booleanPreferencesKey("adhan_enabled")
         private val TASK_TONE_URI_KEY = stringPreferencesKey("task_tone_uri")
         private val TASK_TONE_NAME_KEY = stringPreferencesKey("task_tone_name")
+    }
+
+    val appLightThemeFlow: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[APP_LIGHT_THEME_KEY] ?: false
     }
 
     val quranVerseFlow: Flow<String> = context.dataStore.data.map { prefs ->
@@ -119,6 +124,13 @@ class MindStorage(private val context: Context) {
     suspend fun getTaskToneUriSync(): String? = taskToneUriFlow.first()
     suspend fun isAdhanEnabledSync(): Boolean = adhanEnabledFlow.first()
     suspend fun getTasksSync(): List<TaskItem> = tasksFlow.first()
+
+    suspend fun saveAppLightTheme(isLight: Boolean) {
+        context.dataStore.edit {
+            it[APP_LIGHT_THEME_KEY] = isLight
+            it[QURAN_SEPIA_MODE_KEY] = isLight
+        }
+    }
 
     suspend fun saveQuranVerse(verse: String) {
         context.dataStore.edit { it[QURAN_VERSE_KEY] = verse }
