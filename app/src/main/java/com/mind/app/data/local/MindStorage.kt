@@ -5,12 +5,15 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.mind.app.domain.model.NoteFolder
 import com.mind.app.domain.model.NoteItem
 import com.mind.app.domain.model.QuoteDisplayMode
 import com.mind.app.domain.model.QuoteItem
+import com.mind.app.domain.model.QuranBookmark
+import com.mind.app.domain.model.QuranSurah
 import com.mind.app.domain.model.TaskItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -36,6 +39,9 @@ class MindStorage(private val context: Context) {
         private val NOTES_KEY = stringPreferencesKey("notes_list_v2")
         private val TASKS_KEY = stringPreferencesKey("tasks_list_v2")
         private val QURAN_VERSE_KEY = stringPreferencesKey("quran_verse")
+        private val QURAN_BOOKMARK_KEY = stringPreferencesKey("quran_bookmark")
+        private val QURAN_FONT_SIZE_KEY = floatPreferencesKey("quran_font_size")
+        private val QURAN_SEPIA_MODE_KEY = booleanPreferencesKey("quran_sepia_mode")
         private val ADHAN_TONE_URI_KEY = stringPreferencesKey("adhan_tone_uri")
         private val ADHAN_TONE_NAME_KEY = stringPreferencesKey("adhan_tone_name")
         private val ADHAN_ENABLED_KEY = booleanPreferencesKey("adhan_enabled")
@@ -45,6 +51,19 @@ class MindStorage(private val context: Context) {
 
     val quranVerseFlow: Flow<String> = context.dataStore.data.map { prefs ->
         prefs[QURAN_VERSE_KEY] ?: "وَلَا تَيۡـَٔسُواْ مِن رَّوۡحِ ٱللَّهِ"
+    }
+
+    val quranBookmarkFlow: Flow<QuranBookmark> = context.dataStore.data.map { prefs ->
+        prefs[QURAN_BOOKMARK_KEY]?.let { runCatching { json.decodeFromString<QuranBookmark>(it) }.getOrNull() }
+            ?: QuranBookmark()
+    }
+
+    val quranFontSizeFlow: Flow<Float> = context.dataStore.data.map { prefs ->
+        prefs[QURAN_FONT_SIZE_KEY] ?: 25f
+    }
+
+    val quranSepiaModeFlow: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[QURAN_SEPIA_MODE_KEY] ?: false
     }
 
     val quotesFlow: Flow<List<QuoteItem>> = context.dataStore.data.map { prefs ->
@@ -105,6 +124,18 @@ class MindStorage(private val context: Context) {
         context.dataStore.edit { it[QURAN_VERSE_KEY] = verse }
     }
 
+    suspend fun saveQuranBookmark(bookmark: QuranBookmark) {
+        context.dataStore.edit { it[QURAN_BOOKMARK_KEY] = json.encodeToString(bookmark) }
+    }
+
+    suspend fun saveQuranFontSize(size: Float) {
+        context.dataStore.edit { it[QURAN_FONT_SIZE_KEY] = size }
+    }
+
+    suspend fun saveQuranSepiaMode(isSepia: Boolean) {
+        context.dataStore.edit { it[QURAN_SEPIA_MODE_KEY] = isSepia }
+    }
+
     suspend fun saveQuotes(quotes: List<QuoteItem>) {
         context.dataStore.edit { it[QUOTES_KEY] = json.encodeToString(quotes) }
     }
@@ -149,6 +180,13 @@ class MindStorage(private val context: Context) {
             if (uri != null) prefs[TASK_TONE_URI_KEY] = uri
             prefs[TASK_TONE_NAME_KEY] = name
         }
+    }
+
+    suspend fun loadFullQuranOffline(): List<QuranSurah> = withContext(Dispatchers.IO) {
+        runCatching {
+            val raw = context.assets.open("quran.json").bufferedReader().use { it.readText() }
+            json.decodeFromString<List<QuranSurah>>(raw)
+        }.getOrDefault(emptyList())
     }
 
     suspend fun importMediaUri(uri: Uri, prefix: String): Pair<String, String>? = withContext(Dispatchers.IO) {

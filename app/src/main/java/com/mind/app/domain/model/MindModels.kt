@@ -53,6 +53,29 @@ data class TaskItem(
     val createdAt: Long = System.currentTimeMillis()
 )
 
+@Serializable
+data class QuranVerseItem(
+    val id: Int,
+    val text: String
+)
+
+@Serializable
+data class QuranSurah(
+    val id: Int,
+    val name: String,
+    val transliteration: String = "",
+    val type: String = "",
+    val total_verses: Int = 0,
+    val verses: List<QuranVerseItem> = emptyList()
+)
+
+@Serializable
+data class QuranBookmark(
+    val surahId: Int = 1,
+    val surahName: String = "الفاتحة",
+    val verseId: Int = 1
+)
+
 data class SinglePrayer(
     val nameAr: String,
     val timeFormatted: String,

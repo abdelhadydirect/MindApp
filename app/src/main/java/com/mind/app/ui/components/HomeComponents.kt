@@ -14,6 +14,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,6 +27,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -36,6 +38,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Mosque
@@ -56,14 +59,17 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mind.app.R
 import com.mind.app.domain.model.PrayerDashboardState
 import com.mind.app.domain.model.QuoteItem
 import com.mind.app.domain.model.SinglePrayer
@@ -72,7 +78,6 @@ import com.mind.app.ui.theme.MindCardBottom
 import com.mind.app.ui.theme.MindCardTop
 import com.mind.app.ui.theme.MindGoldAccent
 import com.mind.app.ui.theme.MindInnerSurface
-import com.mind.app.ui.theme.MindMintIcon
 import com.mind.app.ui.theme.MindTextPrimary
 import com.mind.app.ui.theme.MindTextSecondary
 import com.mind.app.ui.theme.QuranFontFamily
@@ -111,18 +116,19 @@ fun MindTopBar(onSettingsClick: () -> Unit) {
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.width(10.dp))
+                // Custom Glowing Brain Icon (2400.png) beside "Mind"
                 Box(
                     modifier = Modifier
-                        .size(34.dp)
-                        .clip(CircleShape)
-                        .background(MindInnerSurface),
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .border(1.dp, MindGoldAccent.copy(alpha = 0.45f), RoundedCornerShape(12.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Psychology,
-                        contentDescription = "Mind Logo",
-                        tint = MindMintIcon,
-                        modifier = Modifier.size(22.dp)
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_mind_brain_header),
+                        contentDescription = "Mind Glowing Brain Logo",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
             }
@@ -172,7 +178,6 @@ fun PrayerDashboardCard(state: PrayerDashboardState) {
             )
             .padding(20.dp)
     ) {
-        // Header: Mosque Icon on Left, Arabic Date on Right
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -222,7 +227,6 @@ fun PrayerDashboardCard(state: PrayerDashboardState) {
 
         Spacer(modifier = Modifier.height(18.dp))
 
-        // Inner Next Prayer Countdown Card (Clean 2-Column Alignment, Single Line Labels)
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             Column(
                 modifier = Modifier
@@ -236,7 +240,6 @@ fun PrayerDashboardCard(state: PrayerDashboardState) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.Top
                 ) {
-                    // Left Column: Remaining Time
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "متبقي على الأذان",
@@ -259,7 +262,6 @@ fun PrayerDashboardCard(state: PrayerDashboardState) {
                         )
                     }
 
-                    // Right Column: Next Prayer Name & Time
                     Column(horizontalAlignment = Alignment.End) {
                         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                             Text(
@@ -289,7 +291,6 @@ fun PrayerDashboardCard(state: PrayerDashboardState) {
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Progress Bar filling from Right to Left
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -331,7 +332,6 @@ fun PrayerDashboardCard(state: PrayerDashboardState) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Horizontal Prayers Strip
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -446,8 +446,17 @@ fun DynamicQuoteSpace(
     }
 }
 
+/**
+ * Minimalist 4-Icon Bottom Navigation Bar (Uniform White Icons, No Labels):
+ * Order from Right to Left (Arabic):
+ * 1. Quran (First tab on the right)
+ * 2. Notes (Pen)
+ * 3. Tasks (CheckCircle)
+ * 4. Quotes / Mind (Brain - same white color as the rest)
+ */
 @Composable
 fun MinimalBottomActionBar(
+    onQuranClick: () -> Unit,
     onNotesClick: () -> Unit,
     onTasksClick: () -> Unit,
     onQuotesEditorClick: () -> Unit
@@ -456,28 +465,36 @@ fun MinimalBottomActionBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 36.dp, vertical = 14.dp)
+                .padding(horizontal = 24.dp, vertical = 14.dp)
                 .clip(CircleShape)
-                .background(MindInnerSurface.copy(alpha = 0.85f))
+                .background(MindInnerSurface.copy(alpha = 0.88f))
                 .border(1.dp, Color.White.copy(alpha = 0.08f), CircleShape)
-                .padding(vertical = 10.dp, horizontal = 20.dp),
+                .padding(vertical = 10.dp, horizontal = 14.dp),
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
             SpringIconAction(
+                icon = Icons.AutoMirrored.Outlined.MenuBook,
+                contentDescription = "Quran",
+                tint = MindTextPrimary,
+                onClick = onQuranClick
+            )
+            SpringIconAction(
                 icon = Icons.Outlined.Edit,
                 contentDescription = "Notes",
+                tint = MindTextPrimary,
                 onClick = onNotesClick
             )
             SpringIconAction(
                 icon = Icons.Outlined.CheckCircle,
                 contentDescription = "Tasks",
+                tint = MindTextPrimary,
                 onClick = onTasksClick
             )
             SpringIconAction(
                 icon = Icons.Outlined.Psychology,
                 contentDescription = "Mind Quotes",
-                tint = MindMintIcon,
+                tint = MindTextPrimary,
                 onClick = onQuotesEditorClick
             )
         }

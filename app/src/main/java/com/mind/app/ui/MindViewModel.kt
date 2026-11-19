@@ -13,6 +13,8 @@ import com.mind.app.domain.model.NoteItem
 import com.mind.app.domain.model.PrayerDashboardState
 import com.mind.app.domain.model.QuoteDisplayMode
 import com.mind.app.domain.model.QuoteItem
+import com.mind.app.domain.model.QuranBookmark
+import com.mind.app.domain.model.QuranSurah
 import com.mind.app.domain.model.TaskItem
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +35,18 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
 
     val quranVerse: StateFlow<String> = storage.quranVerseFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "وَلَا تَيۡـَٔسُواْ مِن رَّوۡحِ ٱللَّهِ")
+
+    private val _quranSurahs = MutableStateFlow<List<QuranSurah>>(emptyList())
+    val quranSurahs: StateFlow<List<QuranSurah>> = _quranSurahs.asStateFlow()
+
+    val quranBookmark: StateFlow<QuranBookmark> = storage.quranBookmarkFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), QuranBookmark())
+
+    val quranFontSize: StateFlow<Float> = storage.quranFontSizeFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 25f)
+
+    val quranSepiaMode: StateFlow<Boolean> = storage.quranSepiaModeFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val quotes: StateFlow<List<QuoteItem>> = storage.quotesFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -84,6 +98,7 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         viewModelScope.launch {
+            _quranSurahs.value = storage.loadFullQuranOffline()
             if (storage.isAdhanEnabledSync()) {
                 MindAlarmScheduler.scheduleNextAdhan(appContext)
             }
@@ -91,6 +106,25 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
                 _prayerState.value = PrayerEngine.calculateDashboardState()
                 delay(15_000L)
             }
+        }
+    }
+
+    // Quran Reader Actions
+    fun saveBookmark(surahId: Int, surahName: String, verseId: Int) {
+        viewModelScope.launch {
+            storage.saveQuranBookmark(QuranBookmark(surahId, surahName, verseId))
+        }
+    }
+
+    fun updateQuranFontSize(newSize: Float) {
+        viewModelScope.launch {
+            storage.saveQuranFontSize(newSize.coerceIn(18f, 38f))
+        }
+    }
+
+    fun toggleQuranSepiaMode(isSepia: Boolean) {
+        viewModelScope.launch {
+            storage.saveQuranSepiaMode(isSepia)
         }
     }
 
