@@ -6,13 +6,12 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -43,6 +42,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
+import androidx.compose.material.icons.automirrored.outlined.DriveFileMove
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.AudioFile
 import androidx.compose.material.icons.outlined.Check
@@ -51,6 +51,7 @@ import androidx.compose.material.icons.outlined.CreateNewFolder
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.DriveFileRenameOutline
 import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.AlertDialog
@@ -74,6 +75,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
@@ -86,7 +88,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.mind.app.domain.model.AudioTrackItem
 import com.mind.app.domain.model.NoteFolder
 import com.mind.app.domain.model.NoteItem
 import com.mind.app.ui.MindViewModel
@@ -105,6 +106,46 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/**
+ * Classic Twitter Bird Vector Icon in MindGoldAccent (replaces default "تدوينة" title)
+ */
+@Composable
+fun ClassicTwitterBirdIcon(
+    tint: Color = MindGoldAccent,
+    modifier: Modifier = Modifier.size(22.dp)
+) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val path = Path().apply {
+            moveTo(w * 0.98f, h * 0.19f)
+            cubicTo(w * 0.94f, h * 0.21f, w * 0.90f, h * 0.22f, w * 0.86f, h * 0.23f)
+            cubicTo(w * 0.90f, h * 0.20f, w * 0.94f, h * 0.16f, w * 0.95f, h * 0.11f)
+            cubicTo(w * 0.91f, h * 0.14f, w * 0.86f, h * 0.15f, w * 0.82f, h * 0.16f)
+            cubicTo(w * 0.78f, h * 0.12f, w * 0.72f, h * 0.09f, w * 0.66f, h * 0.09f)
+            cubicTo(w * 0.54f, h * 0.09f, w * 0.45f, h * 0.19f, w * 0.45f, h * 0.30f)
+            cubicTo(w * 0.45f, h * 0.32f, w * 0.45f, h * 0.34f, w * 0.46f, h * 0.35f)
+            cubicTo(w * 0.28f, h * 0.34f, w * 0.13f, h * 0.26f, w * 0.03f, h * 0.13f)
+            cubicTo(w * 0.01f, h * 0.16f, w * 0.00f, h * 0.20f, w * 0.00f, h * 0.24f)
+            cubicTo(w * 0.00f, h * 0.31f, w * 0.04f, h * 0.38f, w * 0.09f, h * 0.41f)
+            cubicTo(w * 0.06f, h * 0.41f, w * 0.02f, h * 0.40f, w * 0.00f, h * 0.39f)
+            lineTo(w * 0.00f, h * 0.39f)
+            cubicTo(w * 0.00f, h * 0.49f, w * 0.07f, h * 0.58f, w * 0.17f, h * 0.60f)
+            cubicTo(w * 0.15f, h * 0.60f, w * 0.13f, h * 0.60f, w * 0.11f, h * 0.60f)
+            cubicTo(w * 0.10f, h * 0.60f, w * 0.08f, h * 0.60f, w * 0.07f, h * 0.60f)
+            cubicTo(w * 0.10f, h * 0.68f, w * 0.18f, h * 0.74f, w * 0.27f, h * 0.74f)
+            cubicTo(w * 0.20f, h * 0.80f, w * 0.11f, h * 0.83f, w * 0.01f, h * 0.83f)
+            cubicTo(w * 0.00f, h * 0.83f, w * 0.00f, h * 0.83f, w * 0.00f, h * 0.83f)
+            cubicTo(w * 0.09f, h * 0.89f, w * 0.20f, h * 0.93f, w * 0.32f, h * 0.93f)
+            cubicTo(w * 0.71f, h * 0.93f, w * 0.92f, h * 0.60f, w * 0.92f, h * 0.32f)
+            cubicTo(w * 0.92f, h * 0.31f, w * 0.92f, h * 0.30f, w * 0.92f, h * 0.29f)
+            cubicTo(w * 0.96f, h * 0.26f, w * 0.98f, h * 0.23f, w * 0.98f, h * 0.19f)
+            close()
+        }
+        drawPath(path = path, color = tint)
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun NotesScreen(viewModel: MindViewModel, onBack: () -> Unit) {
@@ -115,9 +156,9 @@ fun NotesScreen(viewModel: MindViewModel, onBack: () -> Unit) {
     var selectedFolderId by remember { mutableStateOf<String?>(null) }
     var showCreateFolderDialog by remember { mutableStateOf(false) }
     var folderBeingManaged by remember { mutableStateOf<NoteFolder?>(null) }
+    var noteBeingMoved by remember { mutableStateOf<NoteItem?>(null) }
     var editingNote by remember { mutableStateOf<NoteItem?>(null) }
 
-    // If a note is open in the rich editor, show the distraction-free editor
     AnimatedContent(
         targetState = editingNote,
         transitionSpec = { fadeIn() togetherWith fadeOut() },
@@ -126,6 +167,7 @@ fun NotesScreen(viewModel: MindViewModel, onBack: () -> Unit) {
         if (activeNote != null) {
             RichNoteEditorScreen(
                 initialNote = activeNote,
+                folders = folders,
                 viewModel = viewModel,
                 onClose = { savedNote ->
                     if (savedNote != null) {
@@ -151,7 +193,6 @@ fun NotesScreen(viewModel: MindViewModel, onBack: () -> Unit) {
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Top-left: Create Folder Icon Button (No default folder)
                         IconButton(
                             onClick = {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -205,7 +246,6 @@ fun NotesScreen(viewModel: MindViewModel, onBack: () -> Unit) {
                         .fillMaxSize()
                         .padding(padding)
                 ) {
-                    // User-created Folders Strip (Only visible once user creates at least one folder)
                     AnimatedVisibility(
                         visible = folders.isNotEmpty(),
                         enter = expandVertically() + fadeIn(),
@@ -218,7 +258,6 @@ fun NotesScreen(viewModel: MindViewModel, onBack: () -> Unit) {
                             contentPadding = PaddingValues(horizontal = 16.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            // "All" filter chip when folders exist
                             item {
                                 val isAllSelected = selectedFolderId == null
                                 Box(
@@ -301,9 +340,13 @@ fun NotesScreen(viewModel: MindViewModel, onBack: () -> Unit) {
                             verticalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
                             items(filteredNotes, key = { it.id }) { note ->
+                                val folderName = folders.find { it.id == note.folderId }?.name
                                 RichNoteCard(
                                     note = note,
+                                    folderName = folderName,
+                                    hasFolders = folders.isNotEmpty(),
                                     onTapToEdit = { editingNote = note },
+                                    onMoveRequest = { noteBeingMoved = note },
                                     onMoveAudioUp = { idx ->
                                         val list = note.audioPlaylist.toMutableList()
                                         if (idx > 0) {
@@ -330,7 +373,6 @@ fun NotesScreen(viewModel: MindViewModel, onBack: () -> Unit) {
         }
     }
 
-    // Create Folder Dialog
     if (showCreateFolderDialog) {
         FolderNameDialog(
             title = "مجلد جديد",
@@ -344,7 +386,6 @@ fun NotesScreen(viewModel: MindViewModel, onBack: () -> Unit) {
         )
     }
 
-    // Rename / Delete Folder Dialog
     folderBeingManaged?.let { folder ->
         FolderManageDialog(
             folder = folder,
@@ -360,16 +401,28 @@ fun NotesScreen(viewModel: MindViewModel, onBack: () -> Unit) {
             }
         )
     }
+
+    // One-tap Move Note to Folder Dialog
+    noteBeingMoved?.let { note ->
+        MoveNoteFolderDialog(
+            folders = folders,
+            currentFolderId = note.folderId,
+            onDismiss = { noteBeingMoved = null },
+            onSelectFolder = { targetId ->
+                viewModel.moveNoteToFolder(note.id, targetId)
+                noteBeingMoved = null
+            }
+        )
+    }
 }
 
-/**
- * Rich Note Card in Feed:
- * Tapping anywhere on text opens instant inline editing; embedded media players work directly inside!
- */
 @Composable
 private fun RichNoteCard(
     note: NoteItem,
+    folderName: String?,
+    hasFolders: Boolean,
     onTapToEdit: () -> Unit,
+    onMoveRequest: () -> Unit,
     onMoveAudioUp: (Int) -> Unit,
     onMoveAudioDown: (Int) -> Unit,
     onDelete: () -> Unit
@@ -386,7 +439,6 @@ private fun RichNoteCard(
             .border(1.dp, Color.White.copy(alpha = 0.06f), RoundedCornerShape(22.dp))
             .padding(16.dp)
     ) {
-        // Clickable text area -> Direct immediate editing
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -397,23 +449,65 @@ private fun RichNoteCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = note.title.ifBlank { "تدوينة" },
-                    color = MindGoldAccent,
-                    fontFamily = CairoFontFamily,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.weight(1f)
-                )
-                IconButton(onClick = onDelete, modifier = Modifier.size(30.dp)) {
-                    Icon(
-                        imageVector = Icons.Outlined.DeleteOutline,
-                        contentDescription = "Delete",
-                        tint = MindTextSecondary.copy(alpha = 0.6f),
-                        modifier = Modifier.size(18.dp)
-                    )
+                ) {
+                    if (note.title.isBlank()) {
+                        // Classic Twitter Bird Icon in Gold instead of "تدوينة"
+                        ClassicTwitterBirdIcon(
+                            tint = MindGoldAccent,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    } else {
+                        Text(
+                            text = note.title,
+                            color = MindGoldAccent,
+                            fontFamily = CairoFontFamily,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    if (folderName != null) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.08f))
+                                .padding(horizontal = 8.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = folderName,
+                                color = MindTextSecondary,
+                                fontFamily = CairoFontFamily,
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (hasFolders) {
+                        IconButton(onClick = onMoveRequest, modifier = Modifier.size(30.dp)) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.DriveFileMove,
+                                contentDescription = "Move to Folder",
+                                tint = MindGoldAccent.copy(alpha = 0.85f),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                    IconButton(onClick = onDelete, modifier = Modifier.size(30.dp)) {
+                        Icon(
+                            imageVector = Icons.Outlined.DeleteOutline,
+                            contentDescription = "Delete",
+                            tint = MindTextSecondary.copy(alpha = 0.6f),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
             }
 
@@ -429,7 +523,6 @@ private fun RichNoteCard(
             }
         }
 
-        // Attached Images
         if (note.imagePaths.isNotEmpty()) {
             Spacer(modifier = Modifier.height(12.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -447,13 +540,11 @@ private fun RichNoteCard(
             }
         }
 
-        // Embedded YouTube-Style Video Player
         if (note.videoPath != null) {
             Spacer(modifier = Modifier.height(12.dp))
             EmbeddedYouTubeVideoPlayer(videoPath = note.videoPath)
         }
 
-        // Embedded YouTube-Style Audio / Playlist Player
         if (note.audioPlaylist.isNotEmpty()) {
             Spacer(modifier = Modifier.height(12.dp))
             EmbeddedAudioPlaylistPlayer(
@@ -474,20 +565,20 @@ private fun RichNoteCard(
     }
 }
 
-/**
- * Elevated Distraction-Free Rich Editor with Icon-Only Media Dock
- */
 @Composable
 private fun RichNoteEditorScreen(
     initialNote: NoteItem,
+    folders: List<NoteFolder>,
     viewModel: MindViewModel,
     onClose: (NoteItem?) -> Unit
 ) {
     var title by remember { mutableStateOf(initialNote.title) }
     var content by remember { mutableStateOf(initialNote.content) }
+    var folderId by remember { mutableStateOf(initialNote.folderId) }
     var imagePaths by remember { mutableStateOf(initialNote.imagePaths) }
     var videoPath by remember { mutableStateOf(initialNote.videoPath) }
     var audioPlaylist by remember { mutableStateOf(initialNote.audioPlaylist) }
+    var showFolderPicker by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
@@ -538,36 +629,52 @@ private fun RichNoteEditorScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        if (hasAnyContent) {
-                            onClose(
-                                initialNote.copy(
-                                    title = title.trim(),
-                                    content = content.trim(),
-                                    imagePaths = imagePaths,
-                                    videoPath = videoPath,
-                                    audioPlaylist = audioPlaylist
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            if (hasAnyContent) {
+                                onClose(
+                                    initialNote.copy(
+                                        folderId = folderId,
+                                        title = title.trim(),
+                                        content = content.trim(),
+                                        imagePaths = imagePaths,
+                                        videoPath = videoPath,
+                                        audioPlaylist = audioPlaylist
+                                    )
                                 )
+                            } else {
+                                onClose(null)
+                            }
+                        },
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(MindGoldAccent)
+                    ) {
+                        Icon(Icons.Outlined.Check, contentDescription = "Save", tint = MindBgDark)
+                    }
+
+                    if (folders.isNotEmpty()) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        IconButton(
+                            onClick = { showFolderPicker = true },
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(MindInnerSurface)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.FolderOpen,
+                                contentDescription = "Select Folder",
+                                tint = MindGoldAccent
                             )
-                        } else {
-                            onClose(null)
                         }
-                    },
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(MindGoldAccent)
-                ) {
-                    Icon(Icons.Outlined.Check, contentDescription = "Save", tint = MindBgDark)
+                    }
                 }
 
-                // Live subtle word counter
-                val wordCount = remember(content) {
-                    content.trim().split("\\s+".toRegex()).count { it.isNotBlank() }
-                }
+                val selectedFolderName = folders.find { it.id == folderId }?.name
                 Text(
-                    text = if (wordCount > 0) "$wordCount كلمة" else "مساحة الكتابة",
+                    text = selectedFolderName ?: "مساحة الكتابة",
                     color = MindTextSecondary,
                     fontFamily = CairoFontFamily,
                     fontSize = 13.sp
@@ -579,7 +686,6 @@ private fun RichNoteEditorScreen(
             }
         },
         bottomBar = {
-            // Floating Icon-Only Media Dock (No text labels)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -598,7 +704,6 @@ private fun RichNoteEditorScreen(
                     horizontalArrangement = Arrangement.SpaceAround,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Add Images Icon
                     IconButton(onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -606,7 +711,6 @@ private fun RichNoteEditorScreen(
                         Icon(Icons.Outlined.Image, contentDescription = "Add Image", tint = MindMintIcon, modifier = Modifier.size(26.dp))
                     }
 
-                    // Add Video Icon
                     IconButton(onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         videoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
@@ -614,7 +718,6 @@ private fun RichNoteEditorScreen(
                         Icon(Icons.Outlined.Videocam, contentDescription = "Add Video", tint = MindGoldAccent, modifier = Modifier.size(26.dp))
                     }
 
-                    // Add Multiple Audio Files Icon
                     IconButton(onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         audioPicker.launch("audio/*")
@@ -632,7 +735,6 @@ private fun RichNoteEditorScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 22.dp, vertical = 12.dp)
         ) {
-            // Borderless Editorial Title Field
             BasicTextField(
                 value = title,
                 onValueChange = { title = it },
@@ -647,10 +749,10 @@ private fun RichNoteEditorScreen(
                 decorationBox = { innerTextField ->
                     if (title.isEmpty()) {
                         Text(
-                            text = "عنوان الفكرة...",
+                            text = "عنوان الفكرة (اختياري)...",
                             color = MindTextSecondary.copy(alpha = 0.45f),
                             fontFamily = CairoFontFamily,
-                            fontSize = 24.sp,
+                            fontSize = 22.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -660,7 +762,6 @@ private fun RichNoteEditorScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Borderless Editorial Content Field
             BasicTextField(
                 value = content,
                 onValueChange = { content = it },
@@ -688,7 +789,6 @@ private fun RichNoteEditorScreen(
                 }
             )
 
-            // Attached Images Preview with Remove Action
             if (imagePaths.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(16.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -718,7 +818,6 @@ private fun RichNoteEditorScreen(
                 }
             }
 
-            // Embedded Video Preview
             if (videoPath != null) {
                 Spacer(modifier = Modifier.height(16.dp))
                 EmbeddedYouTubeVideoPlayer(
@@ -727,7 +826,6 @@ private fun RichNoteEditorScreen(
                 )
             }
 
-            // Embedded Audio Playlist with Manual Reordering
             if (audioPlaylist.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(16.dp))
                 EmbeddedAudioPlaylistPlayer(
@@ -757,6 +855,77 @@ private fun RichNoteEditorScreen(
 
             Spacer(modifier = Modifier.height(80.dp))
         }
+    }
+
+    if (showFolderPicker) {
+        MoveNoteFolderDialog(
+            folders = folders,
+            currentFolderId = folderId,
+            onDismiss = { showFolderPicker = false },
+            onSelectFolder = { picked ->
+                folderId = picked
+                showFolderPicker = false
+            }
+        )
+    }
+}
+
+@Composable
+private fun MoveNoteFolderDialog(
+    folders: List<NoteFolder>,
+    currentFolderId: String?,
+    onDismiss: () -> Unit,
+    onSelectFolder: (String?) -> Unit
+) {
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = MindInnerSurface,
+            title = {
+                Text("نقل التدوينة إلى...", color = MindTextPrimary, fontFamily = CairoFontFamily, fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Option: No folder (General)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (currentFolderId == null) MindGoldAccent.copy(alpha = 0.2f) else Color.Black.copy(alpha = 0.2f))
+                            .clickable { onSelectFolder(null) }
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Outlined.FolderOpen, contentDescription = null, tint = MindTextSecondary)
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text("مساحة عامة (بدون مجلد)", color = MindTextPrimary, fontFamily = CairoFontFamily)
+                    }
+
+                    folders.forEach { folder ->
+                        val isCurrent = folder.id == currentFolderId
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (isCurrent) MindGoldAccent.copy(alpha = 0.2f) else Color.Black.copy(alpha = 0.2f))
+                                .clickable { onSelectFolder(folder.id) }
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Outlined.Folder, contentDescription = null, tint = MindGoldAccent)
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(folder.name, color = MindTextPrimary, fontFamily = CairoFontFamily, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("إغلاق", color = MindTextSecondary, fontFamily = CairoFontFamily)
+                }
+            }
+        )
     }
 }
 

@@ -47,6 +47,8 @@ data class NoteItem(
 data class TaskItem(
     val id: String = UUID.randomUUID().toString(),
     val title: String,
+    val imagePath: String? = null,
+    val dueAtMillis: Long? = null,
     val isDone: Boolean = false,
     val createdAt: Long = System.currentTimeMillis()
 )

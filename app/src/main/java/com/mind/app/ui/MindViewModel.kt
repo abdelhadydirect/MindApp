@@ -4,6 +4,7 @@ import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.mind.app.alarm.MindAlarmScheduler
 import com.mind.app.data.local.MindStorage
 import com.mind.app.data.prayer.PrayerEngine
 import com.mind.app.domain.model.AudioTrackItem
@@ -24,6 +25,7 @@ import kotlinx.coroutines.launch
 
 class MindViewModel(application: Application) : AndroidViewModel(application) {
 
+    private val appContext = application.applicationContext
     private val storage = MindStorage(application)
 
     private val _prayerState = MutableStateFlow(PrayerEngine.calculateDashboardState())
@@ -56,7 +58,6 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    // Folders & Notes
     val folders: StateFlow<List<NoteFolder>> = storage.foldersFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -66,8 +67,26 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
     val tasks: StateFlow<List<TaskItem>> = storage.tasksFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val adhanEnabled: StateFlow<Boolean> = storage.adhanEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val adhanToneUri: StateFlow<String?> = storage.adhanToneUriFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val adhanToneName: StateFlow<String> = storage.adhanToneNameFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "نغمة التنبيه الافتراضية للهاتف")
+
+    val taskToneUri: StateFlow<String?> = storage.taskToneUriFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val taskToneName: StateFlow<String> = storage.taskToneNameFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "نغمة المنبه الافتراضية للهاتف")
+
     init {
         viewModelScope.launch {
+            if (storage.isAdhanEnabledSync()) {
+                MindAlarmScheduler.scheduleNextAdhan(appContext)
+            }
             while (true) {
                 _prayerState.value = PrayerEngine.calculateDashboardState()
                 delay(15_000L)
@@ -84,6 +103,28 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
     fun updateQuranVerse(newVerse: String) {
         if (newVerse.isNotBlank()) {
             viewModelScope.launch { storage.saveQuranVerse(newVerse.trim()) }
+        }
+    }
+
+    // Adhan & Task Ringtone Settings
+    fun toggleAdhanEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            storage.setAdhanEnabled(enabled)
+            if (enabled) MindAlarmScheduler.scheduleNextAdhan(appContext)
+            else MindAlarmScheduler.cancelAdhan(appContext)
+        }
+    }
+
+    fun updateAdhanTone(uri: String?, name: String) {
+        viewModelScope.launch {
+            storage.saveAdhanSettings(adhanEnabled.value, uri, name)
+            if (adhanEnabled.value) MindAlarmScheduler.scheduleNextAdhan(appContext)
+        }
+    }
+
+    fun updateTaskTone(uri: String?, name: String) {
+        viewModelScope.launch {
+            storage.saveTaskTone(uri, name)
         }
     }
 
@@ -125,7 +166,7 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Folders Actions (No default folder - user creates manually)
+    // Folders Actions
     fun createFolder(name: String) {
         if (name.isBlank()) return
         viewModelScope.launch {
@@ -147,7 +188,6 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteFolder(folderId: String) {
         viewModelScope.launch {
             storage.saveFolders(folders.value.filterNot { it.id == folderId })
-            // Keep notes safe by detaching them from the deleted folder
             val updatedNotes = notes.value.map {
                 if (it.folderId == folderId) it.copy(folderId = null) else it
             }
@@ -169,6 +209,15 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun moveNoteToFolder(noteId: String, targetFolderId: String?) {
+        viewModelScope.launch {
+            val updated = notes.value.map {
+                if (it.id == noteId) it.copy(folderId = targetFolderId, updatedAt = System.currentTimeMillis()) else it
+            }
+            storage.saveNotes(updated)
+        }
+    }
+
     fun deleteNote(id: String) {
         viewModelScope.launch {
             storage.saveNotes(notes.value.filterNot { it.id == id })
@@ -184,19 +233,29 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
         return AudioTrackItem(title = imported.first, filePath = imported.second)
     }
 
-    // Tasks Actions
-    fun addTask(title: String) {
-        if (title.isBlank()) return
+    // Multi-Day & Scheduled Tasks Actions
+    fun addBatchTasks(newTasks: List<TaskItem>) {
+        val valid = newTasks.filter { it.title.isNotBlank() }
+        if (valid.isEmpty()) return
         viewModelScope.launch {
-            val newTask = TaskItem(title = title.trim())
-            storage.saveTasks(listOf(newTask) + tasks.value)
+            storage.saveTasks(valid + tasks.value)
+            valid.forEach { task ->
+                if (task.dueAtMillis != null) {
+                    MindAlarmScheduler.scheduleTaskAlarm(appContext, task)
+                }
+            }
         }
     }
 
     fun toggleTask(id: String) {
         viewModelScope.launch {
             val updated = tasks.value.map {
-                if (it.id == id) it.copy(isDone = !it.isDone) else it
+                if (it.id == id) {
+                    val toggled = it.copy(isDone = !it.isDone)
+                    if (toggled.isDone) MindAlarmScheduler.cancelTaskAlarm(appContext, toggled.id)
+                    else MindAlarmScheduler.scheduleTaskAlarm(appContext, toggled)
+                    toggled
+                } else it
             }
             storage.saveTasks(updated)
         }
@@ -204,6 +263,7 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
 
     fun deleteTask(id: String) {
         viewModelScope.launch {
+            MindAlarmScheduler.cancelTaskAlarm(appContext, id)
             storage.saveTasks(tasks.value.filterNot { it.id == id })
         }
     }

@@ -3,6 +3,7 @@ package com.mind.app.data.local
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -13,6 +14,7 @@ import com.mind.app.domain.model.QuoteItem
 import com.mind.app.domain.model.TaskItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
@@ -32,8 +34,13 @@ class MindStorage(private val context: Context) {
         private val PINNED_QUOTE_ID_KEY = stringPreferencesKey("pinned_quote_id")
         private val FOLDERS_KEY = stringPreferencesKey("note_folders_list")
         private val NOTES_KEY = stringPreferencesKey("notes_list_v2")
-        private val TASKS_KEY = stringPreferencesKey("tasks_list")
+        private val TASKS_KEY = stringPreferencesKey("tasks_list_v2")
         private val QURAN_VERSE_KEY = stringPreferencesKey("quran_verse")
+        private val ADHAN_TONE_URI_KEY = stringPreferencesKey("adhan_tone_uri")
+        private val ADHAN_TONE_NAME_KEY = stringPreferencesKey("adhan_tone_name")
+        private val ADHAN_ENABLED_KEY = booleanPreferencesKey("adhan_enabled")
+        private val TASK_TONE_URI_KEY = stringPreferencesKey("task_tone_uri")
+        private val TASK_TONE_NAME_KEY = stringPreferencesKey("task_tone_name")
     }
 
     val quranVerseFlow: Flow<String> = context.dataStore.data.map { prefs ->
@@ -69,6 +76,31 @@ class MindStorage(private val context: Context) {
             ?: emptyList()
     }
 
+    val adhanEnabledFlow: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[ADHAN_ENABLED_KEY] ?: true
+    }
+
+    val adhanToneUriFlow: Flow<String?> = context.dataStore.data.map { prefs ->
+        prefs[ADHAN_TONE_URI_KEY]
+    }
+
+    val adhanToneNameFlow: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[ADHAN_TONE_NAME_KEY] ?: "نغمة التنبيه الافتراضية للهاتف"
+    }
+
+    val taskToneUriFlow: Flow<String?> = context.dataStore.data.map { prefs ->
+        prefs[TASK_TONE_URI_KEY]
+    }
+
+    val taskToneNameFlow: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[TASK_TONE_NAME_KEY] ?: "نغمة المنبه الافتراضية للهاتف"
+    }
+
+    suspend fun getAdhanToneUriSync(): String? = adhanToneUriFlow.first()
+    suspend fun getTaskToneUriSync(): String? = taskToneUriFlow.first()
+    suspend fun isAdhanEnabledSync(): Boolean = adhanEnabledFlow.first()
+    suspend fun getTasksSync(): List<TaskItem> = tasksFlow.first()
+
     suspend fun saveQuranVerse(verse: String) {
         context.dataStore.edit { it[QURAN_VERSE_KEY] = verse }
     }
@@ -100,10 +132,25 @@ class MindStorage(private val context: Context) {
         context.dataStore.edit { it[TASKS_KEY] = json.encodeToString(tasks) }
     }
 
-    /**
-     * Copies any picked media (image, video, audio) into internal app storage
-     * so it persists reliably forever without URI permission expiration.
-     */
+    suspend fun saveAdhanSettings(enabled: Boolean, uri: String?, name: String) {
+        context.dataStore.edit { prefs ->
+            prefs[ADHAN_ENABLED_KEY] = enabled
+            if (uri != null) prefs[ADHAN_TONE_URI_KEY] = uri
+            prefs[ADHAN_TONE_NAME_KEY] = name
+        }
+    }
+
+    suspend fun setAdhanEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[ADHAN_ENABLED_KEY] = enabled }
+    }
+
+    suspend fun saveTaskTone(uri: String?, name: String) {
+        context.dataStore.edit { prefs ->
+            if (uri != null) prefs[TASK_TONE_URI_KEY] = uri
+            prefs[TASK_TONE_NAME_KEY] = name
+        }
+    }
+
     suspend fun importMediaUri(uri: Uri, prefix: String): Pair<String, String>? = withContext(Dispatchers.IO) {
         runCatching {
             val mediaDir = File(context.filesDir, "mind_media").apply { mkdirs() }
