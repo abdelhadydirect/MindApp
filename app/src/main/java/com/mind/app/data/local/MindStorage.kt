@@ -107,7 +107,7 @@ class MindStorage(private val context: Context) {
     suspend fun importMediaUri(uri: Uri, prefix: String): Pair<String, String>? = withContext(Dispatchers.IO) {
         runCatching {
             val mediaDir = File(context.filesDir, "mind_media").apply { mkdirs() }
-            val originalName = resolveDisplayName(uri) ?: "$prefix_${System.currentTimeMillis()}"
+            val originalName = resolveDisplayName(uri) ?: "${prefix}_${System.currentTimeMillis()}"
             val safeExt = originalName.substringAfterLast('.', "").takeIf { it.isNotBlank() }?.let { ".$it" } ?: ""
             val destFile = File(mediaDir, "${prefix}_${UUID.randomUUID()}$safeExt")
 

@@ -75,7 +75,7 @@ import com.mind.app.ui.theme.MindInnerSurface
 import com.mind.app.ui.theme.MindMintIcon
 import com.mind.app.ui.theme.MindTextPrimary
 import com.mind.app.ui.theme.MindTextSecondary
-import com.mind.app.ui.theme.QuranFontFamily
+import com.mind.app.ui.theme.CairoFontFamily
 
 @Composable
 fun MindTopBar(onSettingsClick: () -> Unit) {
@@ -142,7 +142,7 @@ fun QuranVerseHeader(verse: String) {
         Text(
             text = "﴿ $verse ﴾",
             color = MindTextPrimary,
-            fontFamily = QuranFontFamily,
+            fontFamily = CairoFontFamily,
             fontSize = 26.sp,
             textAlign = TextAlign.Center,
             lineHeight = 44.sp
