@@ -39,6 +39,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.automirrored.outlined.VolumeOff
+import androidx.compose.material.icons.automirrored.outlined.VolumeUp
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Mosque
@@ -78,12 +80,18 @@ import com.mind.app.ui.theme.MindCardBottom
 import com.mind.app.ui.theme.MindCardTop
 import com.mind.app.ui.theme.MindGoldAccent
 import com.mind.app.ui.theme.MindInnerSurface
+import com.mind.app.ui.theme.MindMintIcon
 import com.mind.app.ui.theme.MindTextPrimary
 import com.mind.app.ui.theme.MindTextSecondary
 import com.mind.app.ui.theme.QuranFontFamily
+import com.mind.app.ui.theme.isAppLightTheme
 
 @Composable
-fun MindTopBar(onSettingsClick: () -> Unit) {
+fun MindTopBar(
+    isMusicPlaying: Boolean,
+    onToggleMusic: () -> Unit,
+    onSettingsClick: () -> Unit
+) {
     val haptic = LocalHapticFeedback.current
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Row(
@@ -93,18 +101,38 @@ fun MindTopBar(onSettingsClick: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    onSettingsClick()
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onSettingsClick()
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Settings,
+                        contentDescription = "Settings",
+                        tint = MindTextPrimary,
+                        modifier = Modifier.size(25.dp)
+                    )
                 }
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Settings,
-                    contentDescription = "Settings",
-                    tint = MindTextPrimary,
-                    modifier = Modifier.size(26.dp)
-                )
+
+                IconButton(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onToggleMusic()
+                    }
+                ) {
+                    Icon(
+                        imageVector = if (isMusicPlaying) {
+                            Icons.AutoMirrored.Outlined.VolumeUp
+                        } else {
+                            Icons.AutoMirrored.Outlined.VolumeOff
+                        },
+                        contentDescription = "Toggle Ambient Music",
+                        tint = if (isMusicPlaying) MindGoldAccent else MindTextSecondary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -116,7 +144,6 @@ fun MindTopBar(onSettingsClick: () -> Unit) {
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.width(10.dp))
-                // Custom Glowing Brain Icon (2400.png) beside "Mind"
                 Box(
                     modifier = Modifier
                         .size(40.dp)
@@ -166,6 +193,30 @@ fun PrayerDashboardCard(state: PrayerDashboardState) {
         label = "prayer_progress"
     )
 
+    val cardBorderColor = if (isAppLightTheme) {
+        MindGoldAccent.copy(alpha = 0.35f)
+    } else {
+        Color.White.copy(alpha = 0.08f)
+    }
+
+    val mosqueCircleBg = if (isAppLightTheme) {
+        MindInnerSurface.copy(alpha = 0.9f)
+    } else {
+        Color.White.copy(alpha = 0.14f)
+    }
+
+    val innerBoxBg = if (isAppLightTheme) {
+        MindInnerSurface.copy(alpha = 0.96f)
+    } else {
+        MindInnerSurface.copy(alpha = 0.72f)
+    }
+
+    val trackBg = if (isAppLightTheme) {
+        MindMintIcon.copy(alpha = 0.16f)
+    } else {
+        Color.White.copy(alpha = 0.14f)
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -176,6 +227,7 @@ fun PrayerDashboardCard(state: PrayerDashboardState) {
                     colors = listOf(MindCardTop, MindCardBottom)
                 )
             )
+            .border(1.dp, cardBorderColor, RoundedCornerShape(28.dp))
             .padding(20.dp)
     ) {
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
@@ -188,13 +240,14 @@ fun PrayerDashboardCard(state: PrayerDashboardState) {
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.14f)),
+                        .background(mosqueCircleBg)
+                        .border(1.dp, cardBorderColor, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Mosque,
                         contentDescription = null,
-                        tint = MindTextPrimary,
+                        tint = if (isAppLightTheme) MindMintIcon else MindTextPrimary,
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -232,7 +285,8 @@ fun PrayerDashboardCard(state: PrayerDashboardState) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(20.dp))
-                    .background(MindInnerSurface.copy(alpha = 0.72f))
+                    .background(innerBoxBg)
+                    .border(1.dp, cardBorderColor, RoundedCornerShape(20.dp))
                     .padding(horizontal = 16.dp, vertical = 14.dp)
             ) {
                 Row(
@@ -240,12 +294,12 @@ fun PrayerDashboardCard(state: PrayerDashboardState) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.Top
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(horizontalAlignment = Alignment.Start) {
                         Text(
                             text = "متبقي على الأذان",
                             color = MindTextSecondary,
                             fontFamily = CairoFontFamily,
-                            fontSize = 13.sp,
+                            fontSize = 12.sp,
                             maxLines = 1,
                             softWrap = false
                         )
@@ -254,13 +308,15 @@ fun PrayerDashboardCard(state: PrayerDashboardState) {
                             text = state.remainingHoursMinutes,
                             color = MindTextPrimary,
                             fontFamily = CairoFontFamily,
-                            fontSize = 28.sp,
+                            fontSize = 26.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp,
                             maxLines = 1,
                             softWrap = false
                         )
                     }
+
+                    Spacer(modifier = Modifier.width(12.dp))
 
                     Column(horizontalAlignment = Alignment.End) {
                         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
@@ -269,7 +325,7 @@ fun PrayerDashboardCard(state: PrayerDashboardState) {
                                 color = MindGoldAccent,
                                 fontFamily = CairoFontFamily,
                                 fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold,
+                                fontWeight = FontWeight.Bold,
                                 maxLines = 1,
                                 softWrap = false
                             )
@@ -280,7 +336,7 @@ fun PrayerDashboardCard(state: PrayerDashboardState) {
                                 text = state.nextPrayerTimeFormatted,
                                 color = MindTextPrimary,
                                 fontFamily = CairoFontFamily,
-                                fontSize = 26.sp,
+                                fontSize = 25.sp,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,
                                 softWrap = false
@@ -296,7 +352,7 @@ fun PrayerDashboardCard(state: PrayerDashboardState) {
                         .fillMaxWidth()
                         .height(7.dp)
                         .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.14f)),
+                        .background(trackBg),
                     contentAlignment = Alignment.CenterEnd
                 ) {
                     Box(
@@ -348,11 +404,18 @@ fun PrayerDashboardCard(state: PrayerDashboardState) {
 
 @Composable
 private fun SinglePrayerChip(prayer: SinglePrayer) {
-    val borderColor = if (prayer.isNext) MindGoldAccent else Color.Transparent
-    val bgColor = if (prayer.isNext) {
-        MindInnerSurface.copy(alpha = 0.95f)
+    val borderColor = if (prayer.isNext) {
+        MindGoldAccent
+    } else if (isAppLightTheme) {
+        MindGoldAccent.copy(alpha = 0.22f)
     } else {
-        MindInnerSurface.copy(alpha = 0.55f)
+        Color.Transparent
+    }
+
+    val bgColor = if (prayer.isNext) {
+        MindInnerSurface
+    } else {
+        MindInnerSurface.copy(alpha = if (isAppLightTheme) 0.85f else 0.55f)
     }
 
     Column(
@@ -361,7 +424,7 @@ private fun SinglePrayerChip(prayer: SinglePrayer) {
             .clip(RoundedCornerShape(16.dp))
             .background(bgColor)
             .border(
-                width = if (prayer.isNext) 1.5.dp else 0.dp,
+                width = if (prayer.isNext) 1.5.dp else if (isAppLightTheme) 1.dp else 0.dp,
                 color = borderColor,
                 shape = RoundedCornerShape(16.dp)
             )
@@ -373,7 +436,7 @@ private fun SinglePrayerChip(prayer: SinglePrayer) {
             color = if (prayer.isNext) MindGoldAccent else MindTextSecondary,
             fontFamily = CairoFontFamily,
             fontSize = 14.sp,
-            fontWeight = if (prayer.isNext) FontWeight.Bold else FontWeight.Normal,
+            fontWeight = if (prayer.isNext) FontWeight.Bold else FontWeight.Medium,
             maxLines = 1,
             softWrap = false
         )
@@ -446,14 +509,6 @@ fun DynamicQuoteSpace(
     }
 }
 
-/**
- * Minimalist 4-Icon Bottom Navigation Bar (Uniform White Icons, No Labels):
- * Order from Right to Left (Arabic):
- * 1. Quran (First tab on the right)
- * 2. Notes (Pen)
- * 3. Tasks (CheckCircle)
- * 4. Quotes / Mind (Brain - same white color as the rest)
- */
 @Composable
 fun MinimalBottomActionBar(
     onQuranClick: () -> Unit,
@@ -461,14 +516,20 @@ fun MinimalBottomActionBar(
     onTasksClick: () -> Unit,
     onQuotesEditorClick: () -> Unit
 ) {
+    val navBorderColor = if (isAppLightTheme) {
+        MindGoldAccent.copy(alpha = 0.32f)
+    } else {
+        Color.White.copy(alpha = 0.08f)
+    }
+
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp, vertical = 14.dp)
                 .clip(CircleShape)
-                .background(MindInnerSurface.copy(alpha = 0.88f))
-                .border(1.dp, Color.White.copy(alpha = 0.08f), CircleShape)
+                .background(MindInnerSurface.copy(alpha = 0.94f))
+                .border(1.dp, navBorderColor, CircleShape)
                 .padding(vertical = 10.dp, horizontal = 14.dp),
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically

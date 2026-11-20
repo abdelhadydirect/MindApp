@@ -16,7 +16,7 @@
         android:roundIcon="@drawable/ic_mind_launcher"
         android:label="Mind"
         android:supportsRtl="true"
-        android:theme="@android:style/Theme.Material.NoActionBar">
+        android:theme="@style/Theme.Mind.Splash">
 
         <activity
             android:name=".MainActivity"
@@ -35,7 +35,7 @@
             android:showWhenLocked="true"
             android:turnScreenOn="true"
             android:excludeFromRecents="true"
-            android:theme="@android:style/Theme.Material.NoActionBar" />
+            android:theme="@style/Theme.Mind.Splash" />
 
         <receiver
             android:name=".alarm.MindAlarmReceiver"

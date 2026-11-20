@@ -33,6 +33,8 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
     private val _prayerState = MutableStateFlow(PrayerEngine.calculateDashboardState())
     val prayerState: StateFlow<PrayerDashboardState> = _prayerState.asStateFlow()
 
+    val ambientMusicEnabled = MutableStateFlow(true)
+    fun toggleAmbientMusic() { ambientMusicEnabled.value = !ambientMusicEnabled.value }
     val appLightTheme: StateFlow<Boolean> = storage.appLightThemeFlow.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
     val quranVerse: StateFlow<String> = storage.quranVerseFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "وَلَا تَيۡـَٔسُواْ مِن رَّوۡحِ ٱللَّهِ")

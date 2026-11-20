@@ -18,29 +18,30 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.mind.app.R
 
-// Dynamic App Palette (switches seamlessly between Emerald Dark & Warm Sepia Light)
 var isAppLightTheme by mutableStateOf(false)
 
 val MindBgDark: Color
     get() = if (isAppLightTheme) Color(0xFFF6EEDB) else Color(0xFF091C16)
 
+// Designer-Curated Soft Botanical Sage-Emerald Card for Warm Light Mode
 val MindCardTop: Color
-    get() = if (isAppLightTheme) Color(0xFF19664B) else Color(0xFF19664B)
+    get() = if (isAppLightTheme) Color(0xFFDFECE3) else Color(0xFF19664B)
 
 val MindCardBottom: Color
-    get() = if (isAppLightTheme) Color(0xFF13523C) else Color(0xFF13523C)
+    get() = if (isAppLightTheme) Color(0xFFCFE0D5) else Color(0xFF13523C)
 
+// Warm Ivory-Sand Inner Surface for High-Contrast Harmony in Light Mode
 val MindInnerSurface: Color
-    get() = if (isAppLightTheme) Color(0xFFEDE0C4) else Color(0xFF0E3F2E)
+    get() = if (isAppLightTheme) Color(0xFFFAF6EE) else Color(0xFF0E3F2E)
 
 val MindGoldAccent: Color
-    get() = if (isAppLightTheme) Color(0xFFB8861B) else Color(0xFFE5B94C)
+    get() = if (isAppLightTheme) Color(0xFFA67714) else Color(0xFFE5B94C)
 
 val MindTextPrimary: Color
-    get() = if (isAppLightTheme) Color(0xFF1F241D) else Color(0xFFF3F7F5)
+    get() = if (isAppLightTheme) Color(0xFF133A2B) else Color(0xFFF3F7F5)
 
 val MindTextSecondary: Color
-    get() = if (isAppLightTheme) Color(0xFF5A6557) else Color(0xFFA7C4B9)
+    get() = if (isAppLightTheme) Color(0xFF4F6B5D) else Color(0xFFA7C4B9)
 
 val MindMintIcon: Color
     get() = if (isAppLightTheme) Color(0xFF155D43) else Color(0xFF28A77A)
@@ -104,13 +105,13 @@ private val MindDarkColorScheme = darkColorScheme(
 
 private val MindLightColorScheme = lightColorScheme(
     primary = Color(0xFF155D43),
-    secondary = Color(0xFFB8861B),
+    secondary = Color(0xFFA67714),
     background = Color(0xFFF6EEDB),
-    surface = Color(0xFFEDE0C4),
+    surface = Color(0xFFFAF6EE),
     onPrimary = Color(0xFFF6EEDB),
     onSecondary = Color(0xFFF6EEDB),
-    onBackground = Color(0xFF1F241D),
-    onSurface = Color(0xFF1F241D)
+    onBackground = Color(0xFF133A2B),
+    onSurface = Color(0xFF133A2B)
 )
 
 @Composable

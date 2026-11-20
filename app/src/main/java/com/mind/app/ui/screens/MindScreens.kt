@@ -116,6 +116,7 @@ fun HomeScreen(
     onNavigateToQuotes: () -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
+    val isMusicPlaying by viewModel.ambientMusicEnabled.collectAsState()
     val prayerState by viewModel.prayerState.collectAsState()
     val quranVerse by viewModel.quranVerse.collectAsState()
     val activeQuote by viewModel.activeHomeQuote.collectAsState()
@@ -124,7 +125,7 @@ fun HomeScreen(
         containerColor = MindBgDark,
         topBar = {
             Box(modifier = Modifier.statusBarsPadding()) {
-                MindTopBar(onSettingsClick = onNavigateToSettings)
+                MindTopBar(isMusicPlaying = isMusicPlaying, onToggleMusic = { viewModel.toggleAmbientMusic() }, onSettingsClick = onNavigateToSettings)
             }
         },
         bottomBar = {
