@@ -116,7 +116,7 @@ fun HomeScreen(
     onNavigateToQuotes: () -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
-    val isMusicPlaying by viewModel.ambientMusicEnabled.collectAsState()
+    val isMusicPlaying by viewModel.isUserMusicToggleOn.collectAsState()
     val prayerState by viewModel.prayerState.collectAsState()
     val quranVerse by viewModel.quranVerse.collectAsState()
     val activeQuote by viewModel.activeHomeQuote.collectAsState()
@@ -642,7 +642,7 @@ fun TasksScreen(viewModel: MindViewModel, onBack: () -> Unit) {
 
 @Composable
 fun SettingsScreen(viewModel: MindViewModel, onBack: () -> Unit) {
-    val isLightTheme by viewModel.appLightTheme.collectAsState()
+    val isMintTheme by viewModel.mintThemeEnabled.collectAsState()
     val currentVerse by viewModel.quranVerse.collectAsState()
     val adhanEnabled by viewModel.adhanEnabled.collectAsState()
     val adhanToneUri by viewModel.adhanToneUri.collectAsState()
@@ -703,8 +703,8 @@ fun SettingsScreen(viewModel: MindViewModel, onBack: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("المظهر الفاتح الدافئ (الورق النهاري)", color = MindTextPrimary, fontFamily = CairoFontFamily, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                Switch(checked = isLightTheme, onCheckedChange = { viewModel.toggleAppLightTheme(it) }, colors = SwitchDefaults.colors(checkedThumbColor = MindBgDark, checkedTrackColor = MindGoldAccent))
+                Text("الثيم النعناعي المبهج (Fresh Mint)", color = MindTextPrimary, fontFamily = CairoFontFamily, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Switch(checked = isMintTheme, onCheckedChange = { viewModel.toggleMintTheme(it) }, colors = SwitchDefaults.colors(checkedThumbColor = MindBgDark, checkedTrackColor = MindGoldAccent))
             }
 
             // 1. Adhan Audio & Auto-Alarm Section

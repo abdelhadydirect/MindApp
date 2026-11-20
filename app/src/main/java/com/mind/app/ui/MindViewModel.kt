@@ -30,12 +30,38 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
     private val appContext = application.applicationContext
     private val storage = MindStorage(application)
 
+    // Music control: user toggle + automatic pause while inside Quran tab
+    private val _userMusicEnabled = MutableStateFlow(true)
+    private val _isInQuranTab = MutableStateFlow(false)
+
+    val ambientMusicEnabled: StateFlow<Boolean> = combine(
+        _userMusicEnabled,
+        _isInQuranTab
+    ) { userEnabled, inQuran ->
+        userEnabled && !inQuran
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val isUserMusicToggleOn: StateFlow<Boolean> = _userMusicEnabled.asStateFlow()
+
+    fun toggleAmbientMusic() {
+        _userMusicEnabled.value = !_userMusicEnabled.value
+    }
+
+    fun setQuranTabActive(active: Boolean) {
+        _isInQuranTab.value = active
+    }
+
+    // false = Default Warm Light Theme, true = Joyful Fresh Mint Theme
+    val mintThemeEnabled: StateFlow<Boolean> = storage.appLightThemeFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun toggleMintTheme(enabled: Boolean) {
+        viewModelScope.launch { storage.saveAppLightTheme(enabled) }
+    }
+
     private val _prayerState = MutableStateFlow(PrayerEngine.calculateDashboardState())
     val prayerState: StateFlow<PrayerDashboardState> = _prayerState.asStateFlow()
 
-    val ambientMusicEnabled = MutableStateFlow(true)
-    fun toggleAmbientMusic() { ambientMusicEnabled.value = !ambientMusicEnabled.value }
-    val appLightTheme: StateFlow<Boolean> = storage.appLightThemeFlow.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
     val quranVerse: StateFlow<String> = storage.quranVerseFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "وَلَا تَيۡـَٔسُواْ مِن رَّوۡحِ ٱللَّهِ")
 
@@ -49,7 +75,7 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 25f)
 
     val quranSepiaMode: StateFlow<Boolean> = storage.quranSepiaModeFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     val quotes: StateFlow<List<QuoteItem>> = storage.quotesFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -112,8 +138,6 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Quran Reader Actions
-    fun toggleAppLightTheme(isLight: Boolean) { viewModelScope.launch { storage.saveAppLightTheme(isLight) } }
     fun saveBookmark(surahId: Int, surahName: String, verseId: Int) {
         viewModelScope.launch {
             storage.saveQuranBookmark(QuranBookmark(surahId, surahName, verseId))
@@ -144,7 +168,6 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Adhan & Task Ringtone Settings
     fun toggleAdhanEnabled(enabled: Boolean) {
         viewModelScope.launch {
             storage.setAdhanEnabled(enabled)
@@ -166,7 +189,6 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Quotes Actions
     fun addQuote(text: String, pinImmediately: Boolean = true) {
         if (text.isBlank()) return
         viewModelScope.launch {
@@ -204,7 +226,6 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Folders Actions
     fun createFolder(name: String) {
         if (name.isBlank()) return
         viewModelScope.launch {
@@ -233,7 +254,6 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Rich Notes Actions
     fun upsertNote(note: NoteItem) {
         viewModelScope.launch {
             val existingIdx = notes.value.indexOfFirst { it.id == note.id }
@@ -271,7 +291,6 @@ class MindViewModel(application: Application) : AndroidViewModel(application) {
         return AudioTrackItem(title = imported.first, filePath = imported.second)
     }
 
-    // Multi-Day & Scheduled Tasks Actions
     fun addBatchTasks(newTasks: List<TaskItem>) {
         val valid = newTasks.filter { it.title.isNotBlank() }
         if (valid.isEmpty()) return

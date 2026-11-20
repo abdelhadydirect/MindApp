@@ -46,10 +46,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -80,6 +82,9 @@ import com.mind.app.ui.theme.MindMintIcon
 import com.mind.app.ui.theme.MindTextPrimary
 import com.mind.app.ui.theme.MindTextSecondary
 import com.mind.app.ui.theme.QuranFontFamily
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import java.util.Locale
 
 private fun Int.toArabicDigits(): String {
@@ -89,33 +94,42 @@ private fun Int.toArabicDigits(): String {
     }.joinToString("")
 }
 
-/**
- * Normalizes Uthmani Arabic Quran text by stripping Tashkeel, Tatweel, and unifying Alef/Ya forms
- * so searching "يا ايها" matches "يَـٰٓأَيُّهَا" accurately.
- */
 private fun String.normalizeArabicForSearch(): String {
     val sb = StringBuilder(this.length)
     for (ch in this) {
         when (ch) {
             in '\u064B'..'\u065F', '\u0670', '\u0640', in '\u06D6'..'\u06ED' -> Unit
             'أ', 'إ', 'آ', 'ٱ' -> sb.append('ا')
-            'ى' -> sb.append('ي')
+            'ى', 'ئ' -> sb.append('ي')
             'ؤ' -> sb.append('و')
-            'ئ' -> sb.append('ي')
             else -> sb.append(ch)
         }
     }
     return sb.toString().replace(Regex("\\s+"), " ").trim()
 }
 
+private data class IndexedVerse(
+    val surah: QuranSurah,
+    val verse: QuranVerseItem,
+    val normalizedText: String
+)
+
 private data class VerseSearchHit(
     val surah: QuranSurah,
     val verse: QuranVerseItem,
-    val matchRank: Int // 0 = starts with query, 1 = ends with query, 2 = contains query
+    val matchRank: Int
 )
 
 @Composable
 fun QuranScreen(viewModel: MindViewModel, onBack: () -> Unit) {
+    // Automatically pause ambient music while inside Quran tab, and resume upon exit
+    DisposableEffect(Unit) {
+        viewModel.setQuranTabActive(true)
+        onDispose {
+            viewModel.setQuranTabActive(false)
+        }
+    }
+
     val surahs by viewModel.quranSurahs.collectAsState()
     val bookmark by viewModel.quranBookmark.collectAsState()
     val fontSize by viewModel.quranFontSize.collectAsState()
@@ -171,50 +185,118 @@ private fun MushafIndexScreen(
     onBack: () -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
+    var debouncedQuery by remember { mutableStateOf("") }
     val haptic = LocalHapticFeedback.current
 
-    // Pre-compute normalized verses once for instant smart search across all 6236 verses
-    val normalizedIndex = remember(surahs) {
-        surahs.map { surah ->
-            val normSurahName = surah.name.normalizeArabicForSearch()
-            val normVerses = surah.verses.map { v -> Triple(v, v.text.normalizeArabicForSearch(), surah) }
-            Triple(surah, normSurahName, normVerses)
-        }
+    // Smooth debounce so typing is 100% fluid and keyboard never dismisses
+    LaunchedEffect(searchQuery) {
+        delay(160L)
+        debouncedQuery = searchQuery.normalizeArabicForSearch()
     }
 
-    val normalizedQuery = remember(searchQuery) { searchQuery.normalizeArabicForSearch() }
-
-    val filteredSurahs = remember(normalizedIndex, normalizedQuery) {
-        if (normalizedQuery.isBlank()) surahs
-        else normalizedIndex.filter { (surah, normName, _) ->
-            normName.contains(normalizedQuery) || surah.id.toString() == normalizedQuery
-        }.map { it.first }
-    }
-
-    val verseHits = remember(normalizedIndex, normalizedQuery) {
-        if (normalizedQuery.length < 2) emptyList()
-        else {
-            val results = mutableListOf<VerseSearchHit>()
-            for ((surah, _, normVerses) in normalizedIndex) {
-                for ((verse, normText, _) in normVerses) {
-                    if (normText.contains(normalizedQuery)) {
-                        val rank = when {
-                            normText.startsWith(normalizedQuery) -> 0
-                            normText.endsWith(normalizedQuery) -> 1
-                            else -> 2
-                        }
-                        results.add(VerseSearchHit(surah, verse, rank))
-                    }
+    // Build flat search index on background thread once
+    val flatSearchIndex by produceState<Pair<List<Pair<QuranSurah, String>>, List<IndexedVerse>>>(
+        initialValue = Pair(emptyList(), emptyList()),
+        key1 = surahs
+    ) {
+        value = withContext(Dispatchers.Default) {
+            val surahNames = surahs.map { it to it.name.normalizeArabicForSearch() }
+            val allVerses = ArrayList<IndexedVerse>(6236)
+            for (s in surahs) {
+                for (v in s.verses) {
+                    allVerses.add(IndexedVerse(s, v, v.text.normalizeArabicForSearch()))
                 }
             }
-            results.sortedWith(compareBy({ it.matchRank }, { it.surah.id }, { it.verse.id })).take(120)
+            Pair(surahNames, allVerses)
         }
     }
+
+    val searchResults by produceState<Pair<List<QuranSurah>, List<VerseSearchHit>>>(
+        initialValue = Pair(surahs, emptyList()),
+        key1 = debouncedQuery,
+        key2 = flatSearchIndex
+    ) {
+        value = withContext(Dispatchers.Default) {
+            if (debouncedQuery.isBlank()) {
+                Pair(surahs, emptyList())
+            } else {
+                val (surahNames, allVerses) = flatSearchIndex
+                val matchedSurahs = surahNames.filter { (s, normName) ->
+                    normName.contains(debouncedQuery) || s.id.toString() == debouncedQuery
+                }.map { it.first }
+
+                val matchedVerses = if (debouncedQuery.length < 2) {
+                    emptyList()
+                } else {
+                    allVerses.asSequence()
+                        .filter { it.normalizedText.contains(debouncedQuery) }
+                        .map { item ->
+                            val rank = when {
+                                item.normalizedText.startsWith(debouncedQuery) -> 0
+                                item.normalizedText.endsWith(debouncedQuery) -> 1
+                                else -> 2
+                            }
+                            VerseSearchHit(item.surah, item.verse, rank)
+                        }
+                        .sortedWith(compareBy({ it.matchRank }, { it.surah.id }, { it.verse.id }))
+                        .take(80)
+                        .toList()
+                }
+                Pair(matchedSurahs, matchedVerses)
+            }
+        }
+    }
+
+    val filteredSurahs = searchResults.first
+    val verseHits = searchResults.second
 
     Scaffold(
         containerColor = MindBgDark,
         topBar = {
-            SubScreenTopBar(title = "المصحف الشريف", onBack = onBack)
+            // Fixed TopBar + Search Box outside LazyColumn so keyboard stays locked open while typing
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MindBgDark)
+            ) {
+                SubScreenTopBar(title = "المصحف الشريف", onBack = onBack)
+
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = {
+                        Text(
+                            "ابحث باسم السورة أو بجزء من آية (مثل: يا ايها)...",
+                            color = MindTextSecondary,
+                            fontFamily = CairoFontFamily,
+                            fontSize = 13.sp
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(Icons.Outlined.Search, contentDescription = null, tint = MindGoldAccent)
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Outlined.Close, contentDescription = "Clear", tint = MindTextSecondary)
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MindGoldAccent,
+                        unfocusedBorderColor = MindTextSecondary.copy(alpha = 0.25f),
+                        focusedContainerColor = MindInnerSurface,
+                        unfocusedContainerColor = MindInnerSurface,
+                        focusedTextColor = MindTextPrimary,
+                        unfocusedTextColor = MindTextPrimary
+                    )
+                )
+            }
         }
     ) { padding ->
         if (surahs.isEmpty()) {
@@ -233,11 +315,11 @@ private fun MushafIndexScreen(
                     .padding(padding)
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
-                contentPadding = PaddingValues(bottom = 32.dp)
+                contentPadding = PaddingValues(top = 6.dp, bottom = 32.dp)
             ) {
                 // Continue Reading Hero Card (when not searching)
-                if (normalizedQuery.isBlank()) {
-                    item {
+                if (debouncedQuery.isBlank()) {
+                    item(key = "continue_reading_card") {
                         val bookmarkedSurah = surahs.find { it.id == bookmark.surahId } ?: surahs.first()
                         Row(
                             modifier = Modifier
@@ -248,7 +330,7 @@ private fun MushafIndexScreen(
                                         colors = listOf(MindCardTop, MindCardBottom)
                                     )
                                 )
-                                .border(1.dp, MindGoldAccent.copy(alpha = 0.45f), RoundedCornerShape(24.dp))
+                                .border(1.dp, MindGoldAccent.copy(alpha = 0.4f), RoundedCornerShape(24.dp))
                                 .clickable {
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     onOpenSurah(bookmarkedSurah, bookmark.verseId)
@@ -262,13 +344,13 @@ private fun MushafIndexScreen(
                                     Icon(
                                         imageVector = Icons.Outlined.Bookmark,
                                         contentDescription = null,
-                                        tint = Color(0xFFE5B94C),
+                                        tint = MindGoldAccent,
                                         modifier = Modifier.size(18.dp)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
                                         text = "متابعة القراءة",
-                                        color = Color(0xFFE5B94C),
+                                        color = MindGoldAccent,
                                         fontFamily = CairoFontFamily,
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold
@@ -277,13 +359,13 @@ private fun MushafIndexScreen(
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Text(
                                     text = "سورة ${bookmarkedSurah.name}",
-                                    color = Color(0xFFF3F7F5),
+                                    color = MindTextPrimary,
                                     fontFamily = QuranFontFamily,
                                     fontSize = 24.sp
                                 )
                                 Text(
                                     text = "الآية ${bookmark.verseId.toArabicDigits()}",
-                                    color = Color(0xFFA7C4B9),
+                                    color = MindTextSecondary,
                                     fontFamily = CairoFontFamily,
                                     fontSize = 13.sp
                                 )
@@ -293,12 +375,13 @@ private fun MushafIndexScreen(
                                 modifier = Modifier
                                     .size(48.dp)
                                     .clip(CircleShape)
-                                    .background(Color(0xFFE5B94C)),
+                                    .background(MindInnerSurface)
+                                    .border(1.dp, MindGoldAccent.copy(alpha = 0.45f), CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
                                     text = bookmarkedSurah.id.toArabicDigits(),
-                                    color = Color(0xFF091C16),
+                                    color = MindGoldAccent,
                                     fontFamily = CairoFontFamily,
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold
@@ -308,43 +391,9 @@ private fun MushafIndexScreen(
                     }
                 }
 
-                // Smart Search Bar (Surahs + Verses)
-                item {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        placeholder = {
-                            Text(
-                                "ابحث بسورة أو بآية (مثل: يا ايها...)",
-                                color = MindTextSecondary,
-                                fontFamily = CairoFontFamily
-                            )
-                        },
-                        leadingIcon = {
-                            Icon(Icons.Outlined.Search, contentDescription = null, tint = MindGoldAccent)
-                        },
-                        trailingIcon = {
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { searchQuery = "" }) {
-                                    Icon(Icons.Outlined.Close, contentDescription = "Clear", tint = MindTextSecondary)
-                                }
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(18.dp),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MindGoldAccent,
-                            unfocusedBorderColor = MindTextSecondary.copy(alpha = 0.25f),
-                            focusedTextColor = MindTextPrimary,
-                            unfocusedTextColor = MindTextPrimary
-                        )
-                    )
-                }
-
-                // Matching Verses Section (when searching by ayah text)
+                // Matching Verses Section
                 if (verseHits.isNotEmpty()) {
-                    item {
+                    item(key = "verses_header") {
                         Text(
                             text = "الآيات المطابقة (${verseHits.size.toArabicDigits()})",
                             color = MindGoldAccent,
@@ -355,7 +404,7 @@ private fun MushafIndexScreen(
                         )
                     }
 
-                    items(verseHits, key = { "${it.surah.id}_${it.verse.id}" }) { hit ->
+                    items(verseHits, key = { "v_${it.surah.id}_${it.verse.id}" }) { hit ->
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -407,7 +456,7 @@ private fun MushafIndexScreen(
                 // Surahs Index Section
                 if (filteredSurahs.isNotEmpty()) {
                     if (verseHits.isNotEmpty()) {
-                        item {
+                        item(key = "surahs_header") {
                             Text(
                                 text = "السور المطابقة",
                                 color = MindGoldAccent,
@@ -419,14 +468,14 @@ private fun MushafIndexScreen(
                         }
                     }
 
-                    items(filteredSurahs, key = { it.id }) { surah ->
+                    items(filteredSurahs, key = { "s_${it.id}" }) { surah ->
                         val typeAr = if (surah.type.lowercase(Locale.US) == "meccan") "مكية" else "مدنية"
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(18.dp))
                                 .background(MindInnerSurface)
-                                .border(1.dp, MindTextSecondary.copy(alpha = 0.1f), RoundedCornerShape(18.dp))
+                                .border(1.dp, MindGoldAccent.copy(alpha = 0.16f), RoundedCornerShape(18.dp))
                                 .clickable {
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     onOpenSurah(surah, null)
@@ -441,7 +490,7 @@ private fun MushafIndexScreen(
                                         .size(40.dp)
                                         .clip(CircleShape)
                                         .background(MindGoldAccent.copy(alpha = 0.14f))
-                                        .border(1.dp, MindGoldAccent.copy(alpha = 0.5f), CircleShape),
+                                        .border(1.dp, MindGoldAccent.copy(alpha = 0.45f), CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
@@ -502,10 +551,10 @@ private fun MushafSurahReaderScreen(
     val haptic = LocalHapticFeedback.current
     var selectedVerseForAction by remember { mutableStateOf<QuranVerseItem?>(null) }
 
-    val bgColor = if (isSepia) Color(0xFFF6EEDB) else Color(0xFF091C16)
-    val cardColor = if (isSepia) Color(0xFFEDE0C4) else Color(0xFF0E3F2E)
-    val textColor = if (isSepia) Color(0xFF1F241D) else Color(0xFFF3F7F5)
-    val accentColor = if (isSepia) Color(0xFF155D43) else Color(0xFFE5B94C)
+    val bgColor = if (isSepia) Color(0xFFF6EEDB) else Color(0xFFE6F7F0)
+    val cardColor = if (isSepia) Color(0xFFFAF6EE) else Color(0xFFF4FCF8)
+    val textColor = if (isSepia) Color(0xFF133A2B) else Color(0xFF0E4230)
+    val accentColor = if (isSepia) Color(0xFFA67714) else Color(0xFF127A56)
 
     LaunchedEffect(surah.id, initialVerseId) {
         if (initialVerseId != null && initialVerseId > 1) {
@@ -573,7 +622,7 @@ private fun MushafSurahReaderScreen(
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(22.dp))
                         .background(cardColor)
-                        .border(1.5.dp, accentColor.copy(alpha = 0.5f), RoundedCornerShape(22.dp))
+                        .border(1.5.dp, accentColor.copy(alpha = 0.45f), RoundedCornerShape(22.dp))
                         .padding(18.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -606,12 +655,12 @@ private fun MushafSurahReaderScreen(
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(18.dp))
                         .background(
-                            if (isBookmarked || isHighlighted) accentColor.copy(alpha = 0.16f)
-                            else cardColor.copy(alpha = 0.65f)
+                            if (isBookmarked || isHighlighted) accentColor.copy(alpha = 0.14f)
+                            else cardColor
                         )
                         .border(
-                            width = if (isBookmarked || isHighlighted) 1.dp else 0.dp,
-                            color = if (isBookmarked || isHighlighted) accentColor else Color.Transparent,
+                            width = if (isBookmarked || isHighlighted) 1.dp else 0.5.dp,
+                            color = if (isBookmarked || isHighlighted) accentColor else accentColor.copy(alpha = 0.15f),
                             shape = RoundedCornerShape(18.dp)
                         )
                         .clickable {
@@ -684,7 +733,7 @@ private fun MushafSurahReaderScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(14.dp))
-                            .background(MindBgDark.copy(alpha = 0.45f))
+                            .background(MindBgDark.copy(alpha = 0.65f))
                             .clickable {
                                 onSaveBookmark(verse.id)
                                 selectedVerseForAction = null
@@ -701,7 +750,7 @@ private fun MushafSurahReaderScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(14.dp))
-                            .background(MindBgDark.copy(alpha = 0.45f))
+                            .background(MindBgDark.copy(alpha = 0.65f))
                             .clickable {
                                 onSetHomeVerse(verse.text)
                                 selectedVerseForAction = null
