@@ -55,7 +55,7 @@ fun MindNavGraph(viewModel: MindViewModel) {
                 onNavigateToNotes = { navController.navigate(MindRoute.Notes.route) },
                 onNavigateToTasks = { navController.navigate(MindRoute.Tasks.route) },
                 onNavigateToNutrition = { navController.navigate(MindRoute.Nutrition.route) },
-                onNavigateToQuotesEditor = { navController.navigate(MindRoute.Quotes.route) },
+                onNavigateToQuotes = { navController.navigate(MindRoute.Quotes.route) },
                 onNavigateToSettings = { navController.navigate(MindRoute.Settings.route) }
             )
         }
