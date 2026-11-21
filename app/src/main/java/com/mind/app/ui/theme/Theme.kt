@@ -8,16 +8,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.mind.app.R
 
-// false = Warm Ivory Daylight (Default), true = Joyful Fresh Mint Theme
 var isMintThemeMode by mutableStateOf(false)
 val isAppLightTheme: Boolean get() = true
 
@@ -45,32 +42,15 @@ val MindTextSecondary: Color
 val MindMintIcon: Color
     get() = if (isMintThemeMode) Color(0xFF127A56) else Color(0xFF155D43)
 
-@OptIn(ExperimentalTextApi::class)
 val CairoFontFamily = FontFamily(
-    Font(
-        resId = R.font.cairo,
-        weight = FontWeight.Normal,
-        variationSettings = FontVariation.Settings(FontVariation.weight(400))
-    ),
-    Font(
-        resId = R.font.cairo,
-        weight = FontWeight.Medium,
-        variationSettings = FontVariation.Settings(FontVariation.weight(500))
-    ),
-    Font(
-        resId = R.font.cairo,
-        weight = FontWeight.SemiBold,
-        variationSettings = FontVariation.Settings(FontVariation.weight(600))
-    ),
-    Font(
-        resId = R.font.cairo,
-        weight = FontWeight.Bold,
-        variationSettings = FontVariation.Settings(FontVariation.weight(700))
-    )
+    Font(resId = R.font.ibm_plex_regular, weight = FontWeight.Normal),
+    Font(resId = R.font.ibm_plex_medium, weight = FontWeight.Medium),
+    Font(resId = R.font.ibm_plex_semibold, weight = FontWeight.SemiBold),
+    Font(resId = R.font.ibm_plex_bold, weight = FontWeight.Bold)
 )
 
 val QuranFontFamily = FontFamily(
-    Font(resId = R.font.amiri_quran, weight = FontWeight.Normal)
+    Font(resId = R.font.uthmanic_hafs, weight = FontWeight.Normal)
 )
 
 val MindTypography = Typography(
