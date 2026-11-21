@@ -1,6 +1,5 @@
 package com.mind.app.ui.navigation
 
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -13,6 +12,7 @@ import androidx.navigation.compose.rememberNavController
 import com.mind.app.ui.MindViewModel
 import com.mind.app.ui.screens.HomeScreen
 import com.mind.app.ui.screens.NotesScreen
+import com.mind.app.ui.screens.NutritionScreen
 import com.mind.app.ui.screens.QuotesEditorScreen
 import com.mind.app.ui.screens.QuranScreen
 import com.mind.app.ui.screens.SettingsScreen
@@ -23,6 +23,7 @@ sealed class MindRoute(val route: String) {
     data object Quran : MindRoute("quran")
     data object Notes : MindRoute("notes")
     data object Tasks : MindRoute("tasks")
+    data object Nutrition : MindRoute("nutrition")
     data object Quotes : MindRoute("quotes")
     data object Settings : MindRoute("settings")
 }
@@ -35,22 +36,16 @@ fun MindNavGraph(viewModel: MindViewModel) {
         navController = navController,
         startDestination = MindRoute.Home.route,
         enterTransition = {
-            slideInHorizontally(
-                initialOffsetX = { -it / 4 },
-                animationSpec = tween(320, easing = FastOutSlowInEasing)
-            ) + fadeIn(animationSpec = tween(260))
+            slideInHorizontally(initialOffsetX = { -it / 4 }, animationSpec = tween(280)) + fadeIn(tween(240))
         },
         exitTransition = {
-            fadeOut(animationSpec = tween(200))
+            slideOutHorizontally(targetOffsetX = { it / 4 }, animationSpec = tween(280)) + fadeOut(tween(240))
         },
         popEnterTransition = {
-            fadeIn(animationSpec = tween(240))
+            slideInHorizontally(initialOffsetX = { it / 4 }, animationSpec = tween(280)) + fadeIn(tween(240))
         },
         popExitTransition = {
-            slideOutHorizontally(
-                targetOffsetX = { -it / 4 },
-                animationSpec = tween(280, easing = FastOutSlowInEasing)
-            ) + fadeOut(animationSpec = tween(220))
+            slideOutHorizontally(targetOffsetX = { -it / 4 }, animationSpec = tween(280)) + fadeOut(tween(240))
         }
     ) {
         composable(MindRoute.Home.route) {
@@ -59,7 +54,8 @@ fun MindNavGraph(viewModel: MindViewModel) {
                 onNavigateToQuran = { navController.navigate(MindRoute.Quran.route) },
                 onNavigateToNotes = { navController.navigate(MindRoute.Notes.route) },
                 onNavigateToTasks = { navController.navigate(MindRoute.Tasks.route) },
-                onNavigateToQuotes = { navController.navigate(MindRoute.Quotes.route) },
+                onNavigateToNutrition = { navController.navigate(MindRoute.Nutrition.route) },
+                onNavigateToQuotesEditor = { navController.navigate(MindRoute.Quotes.route) },
                 onNavigateToSettings = { navController.navigate(MindRoute.Settings.route) }
             )
         }
@@ -78,6 +74,11 @@ fun MindNavGraph(viewModel: MindViewModel) {
         composable(MindRoute.Tasks.route) {
             TasksScreen(
                 viewModel = viewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(MindRoute.Nutrition.route) {
+            NutritionScreen(
                 onBack = { navController.popBackStack() }
             )
         }

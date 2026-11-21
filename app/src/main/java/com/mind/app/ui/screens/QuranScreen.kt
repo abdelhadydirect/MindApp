@@ -292,7 +292,7 @@ private fun MushafIndexScreen(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         ScopeIconButton(
-                            icon = Icons.AutoMirrored.Outlined.FormatListNumbered,
+                            icon = Icons.AutoMirrored.Outlined.MenuBook,
                             selected = searchScope == QuranSearchScope.SURAH,
                             onClick = {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
