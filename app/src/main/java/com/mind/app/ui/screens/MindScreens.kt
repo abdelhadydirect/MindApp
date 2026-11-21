@@ -113,6 +113,7 @@ fun HomeScreen(
     viewModel: MindViewModel,
     onNavigateToNotes: () -> Unit,
     onNavigateToTasks: () -> Unit,
+    onNavigateToNutrition: () -> Unit = {},
     onNavigateToQuotes: () -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
@@ -134,6 +135,7 @@ fun HomeScreen(
                     onQuranClick = onNavigateToQuran,
                     onNotesClick = onNavigateToNotes,
                     onTasksClick = onNavigateToTasks,
+                onNutritionClick = onNavigateToNutrition,
                     onQuotesEditorClick = onNavigateToQuotes
                 )
             }

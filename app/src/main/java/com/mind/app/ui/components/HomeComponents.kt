@@ -43,6 +43,7 @@ import androidx.compose.material.icons.automirrored.outlined.VolumeOff
 import androidx.compose.material.icons.automirrored.outlined.VolumeUp
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.Mosque
 import androidx.compose.material.icons.outlined.Psychology
 import androidx.compose.material.icons.outlined.Settings
@@ -514,6 +515,7 @@ fun MinimalBottomActionBar(
     onQuranClick: () -> Unit,
     onNotesClick: () -> Unit,
     onTasksClick: () -> Unit,
+    onNutritionClick: () -> Unit = {},
     onQuotesEditorClick: () -> Unit
 ) {
     val navBorderColor = if (isAppLightTheme) {
@@ -551,6 +553,12 @@ fun MinimalBottomActionBar(
                 contentDescription = "Tasks",
                 tint = MindTextPrimary,
                 onClick = onTasksClick
+            )
+            SpringIconAction(
+                icon = Icons.Outlined.FitnessCenter,
+                contentDescription = "Nutrition",
+                tint = MindTextPrimary,
+                onClick = onNutritionClick
             )
             SpringIconAction(
                 icon = Icons.Outlined.Psychology,
