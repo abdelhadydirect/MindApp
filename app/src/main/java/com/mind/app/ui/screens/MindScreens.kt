@@ -114,6 +114,7 @@ fun HomeScreen(
     onNavigateToNotes: () -> Unit,
     onNavigateToTasks: () -> Unit,
     onNavigateToNutrition: () -> Unit = {},
+    onNavigateToChannels: () -> Unit = {},
     onNavigateToQuotes: () -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
@@ -136,6 +137,7 @@ fun HomeScreen(
                     onNotesClick = onNavigateToNotes,
                     onTasksClick = onNavigateToTasks,
                 onNutritionClick = onNavigateToNutrition,
+                onChannelsClick = onNavigateToChannels,
                     onQuotesEditorClick = onNavigateToQuotes
                 )
             }

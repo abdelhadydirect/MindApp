@@ -10,6 +10,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.mind.app.ui.MindViewModel
+import com.mind.app.ui.screens.ChannelsDiscoveryScreen
 import com.mind.app.ui.screens.HomeScreen
 import com.mind.app.ui.screens.NotesScreen
 import com.mind.app.ui.screens.NutritionScreen
@@ -24,6 +25,7 @@ sealed class MindRoute(val route: String) {
     data object Notes : MindRoute("notes")
     data object Tasks : MindRoute("tasks")
     data object Nutrition : MindRoute("nutrition")
+    data object Channels : MindRoute("channels")
     data object Quotes : MindRoute("quotes")
     data object Settings : MindRoute("settings")
 }
@@ -55,6 +57,7 @@ fun MindNavGraph(viewModel: MindViewModel) {
                 onNavigateToNotes = { navController.navigate(MindRoute.Notes.route) },
                 onNavigateToTasks = { navController.navigate(MindRoute.Tasks.route) },
                 onNavigateToNutrition = { navController.navigate(MindRoute.Nutrition.route) },
+                onNavigateToChannels = { navController.navigate(MindRoute.Channels.route) },
                 onNavigateToQuotes = { navController.navigate(MindRoute.Quotes.route) },
                 onNavigateToSettings = { navController.navigate(MindRoute.Settings.route) }
             )
@@ -79,6 +82,11 @@ fun MindNavGraph(viewModel: MindViewModel) {
         }
         composable(MindRoute.Nutrition.route) {
             NutritionScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(MindRoute.Channels.route) {
+            ChannelsDiscoveryScreen(
                 onBack = { navController.popBackStack() }
             )
         }
