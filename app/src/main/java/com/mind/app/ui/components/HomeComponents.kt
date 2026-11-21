@@ -240,7 +240,7 @@ fun PrayerDashboardCard(state: PrayerDashboardState) {
             ) {
                 Box(
                     modifier = Modifier
-                        .size(48.dp)
+                        .size(42.dp)
                         .clip(CircleShape)
                         .background(mosqueCircleBg)
                         .border(1.dp, cardBorderColor, CircleShape),
@@ -530,12 +530,12 @@ fun MinimalBottomActionBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 14.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
                 .clip(CircleShape)
                 .background(MindInnerSurface.copy(alpha = 0.94f))
                 .border(1.dp, navBorderColor, CircleShape)
-                .padding(vertical = 10.dp, horizontal = 14.dp),
-            horizontalArrangement = Arrangement.SpaceAround,
+                .padding(vertical = 8.dp, horizontal = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
             SpringIconAction(
@@ -600,7 +600,7 @@ private fun SpringIconAction(
 
     Box(
         modifier = Modifier
-            .size(48.dp)
+            .size(42.dp)
             .scale(scale)
             .clip(CircleShape)
             .clickable(
@@ -616,7 +616,7 @@ private fun SpringIconAction(
             imageVector = icon,
             contentDescription = contentDescription,
             tint = tint,
-            modifier = Modifier.size(26.dp)
+            modifier = Modifier.size(23.dp)
         )
     }
 }
